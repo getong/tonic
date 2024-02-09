@@ -51,10 +51,10 @@ channel = []
 [dependencies]
 base64 = "0.21"
 bytes = "1.0"
-http = "0.2"
+http = "1.0"
 tracing = "0.1"
 
-http-body = "0.4.4"
+http-body = "1.0"
 percent-encoding = "2.1"
 pin-project = "1.0.11"
 tower-layer = "0.3"
@@ -68,12 +68,12 @@ async-trait = {version = "0.1.13", optional = true}
 
 # transport
 h2 = {version = "0.3.24", optional = true}
-hyper = {version = "0.14.26", features = ["full"], optional = true}
-hyper-timeout = {version = "0.4", optional = true}
+hyper = {version = "1.1", features = ["full"], optional = true}
+hyper-timeout = {version = "0.5", optional = true}
 tokio = {version = "1.0.1", optional = true}
 tokio-stream = "0.1"
 tower = {version = "0.4.7", default-features = false, features = ["balance", "buffer", "discover", "limit", "load", "make", "timeout", "util"], optional = true}
-axum = {version = "0.6.9", default_features = false, optional = true}
+axum = {version = "0.7", default_features = false, optional = true}
 
 # rustls
 async-stream = { version = "0.3", optional = true }
