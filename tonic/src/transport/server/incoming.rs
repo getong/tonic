@@ -2,7 +2,7 @@ use super::{Connected, Server};
 use crate::transport::service::ServerIo;
 use hyper::server::{
     accept::Accept,
-    conn::{AddrIncoming, AddrStream},
+    conn::{AddrIncoming},
 };
 use std::{
     net::SocketAddr,
@@ -187,7 +187,7 @@ impl TcpIncoming {
 }
 
 impl Stream for TcpIncoming {
-    type Item = Result<AddrStream, std::io::Error>;
+    type Item = Result<TcpStream, std::io::Error>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         Pin::new(&mut self.inner).poll_accept(cx)
