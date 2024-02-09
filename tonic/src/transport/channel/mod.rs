@@ -17,7 +17,7 @@ use http::{
     uri::{InvalidUri, Uri},
     Request, Response,
 };
-use hyper::client::connect::Connection as HyperConnection;
+use hyper_util::client::legacy::connect::Connection as HyperConnection;
 use std::{
     fmt,
     future::Future,
