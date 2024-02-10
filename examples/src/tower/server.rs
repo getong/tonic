@@ -86,7 +86,10 @@ type BoxFuture<'a, T> = Pin<Box<dyn std::future::Future<Output = T> + Send + 'a>
 
 impl<S> Service<hyper::Request<Incoming>> for MyMiddleware<S>
 where
-    S: Service<hyper::Request<Incoming>, Response = hyper::Response<BoxBody>> + Clone + Send + 'static,
+    S: Service<hyper::Request<Incoming>, Response = hyper::Response<BoxBody>>
+        + Clone
+        + Send
+        + 'static,
     S::Future: Send + 'static,
 {
     type Response = S::Response;

@@ -99,16 +99,15 @@ where
     type Data = B::Data;
     type Error = B::Error;
 
-  fn poll_frame(
+    fn poll_frame(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-    ) -> Poll<Option<Result<Frame<Self::Data, Self::Error>>>> {
+    ) -> Poll<Option<Result<Frame<Self::Data>, Self::Error>>> {
         match self.project().inner.as_pin_mut() {
             Some(b) => b.poll_frame(cx),
             None => Poll::Ready(None),
         }
     }
-
 
     fn is_end_stream(&self) -> bool {
         match &self.inner {

@@ -1,5 +1,5 @@
 use crate::transport::server::Connected;
-use hyper_util::client::legacy::connect::{Connected as HyperConnected,Connection};
+use hyper_util::client::legacy::connect::{Connected as HyperConnected, Connection};
 use std::io;
 use std::io::IoSlice;
 use std::pin::Pin;

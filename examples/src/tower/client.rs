@@ -44,8 +44,8 @@ mod service {
     use std::pin::Pin;
     use std::task::{Context, Poll};
     use tonic::body::BoxBody;
-    use tonic::transport::Incoming;
     use tonic::transport::Channel;
+    use tonic::transport::Incoming;
     use tower::Service;
 
     pub struct AuthSvc {

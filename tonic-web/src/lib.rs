@@ -168,8 +168,9 @@ where
 {
     type Response = S::Response;
     type Error = S::Error;
-    type Future =
-        <tower_http::cors::Cors<GrpcWebService<S>> as Service<http::Request<hyper::body::Incoming>>>::Future;
+    type Future = <tower_http::cors::Cors<GrpcWebService<S>> as Service<
+        http::Request<hyper::body::Incoming>,
+    >>::Future;
 
     fn poll_ready(
         &mut self,

@@ -5,7 +5,7 @@ use super::{BufferSettings, EncodeBuf, Encoder, DEFAULT_MAX_SEND_MESSAGE_SIZE, H
 use crate::{Code, Status};
 use bytes::{BufMut, Bytes, BytesMut};
 use http::HeaderMap;
-use http_body::{Frame, Body};
+use http_body::{Body, Frame};
 use pin_project::pin_project;
 use std::{
     pin::Pin,
@@ -347,6 +347,4 @@ where
             None => None.into(),
         }
     }
-
-
 }

@@ -12,7 +12,7 @@ use std::{
 };
 use tokio::{
     io::{AsyncRead, AsyncWrite},
-  net::{TcpStream, TcpListener},
+    net::{TcpListener, TcpStream},
 };
 use tokio_stream::{Stream, StreamExt};
 
@@ -127,7 +127,7 @@ enum SelectOutput<A> {
 /// of `AsyncRead + AsyncWrite` that communicate with clients that connect to a socket address.
 #[derive(Debug)]
 pub struct TcpBody {
-  inner: TcpListener,
+    inner: TcpListener,
 }
 
 impl TcpBody {
@@ -181,7 +181,7 @@ impl TcpBody {
     ) -> Result<Self, crate::Error> {
         listener.set_nodelay(nodelay);
         listener.set_keepalive(keepalive);
-      Ok(TcpBody { inner: listener })
+        Ok(TcpBody { inner: listener })
     }
 }
 

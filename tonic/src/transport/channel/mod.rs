@@ -38,7 +38,8 @@ use tower::{
     Service,
 };
 
-type Svc = Either<Connection, BoxService<Request<BoxBody>, Response<hyper::body::Incoming>, crate::Error>>;
+type Svc =
+    Either<Connection, BoxService<Request<BoxBody>, Response<hyper::body::Incoming>, crate::Error>>;
 
 const DEFAULT_BUFFER_SIZE: usize = 1024;
 

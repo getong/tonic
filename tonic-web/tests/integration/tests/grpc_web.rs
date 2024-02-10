@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use base64::Engine as _;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use hyper::http::{header, StatusCode};
-use hyper::{Incoming, Client, Method, Request, Uri};
+use hyper::{Client, Incoming, Method, Request, Uri};
 use prost::Message;
 use tokio::net::TcpListener;
 use tokio_stream::wrappers::TcpListenerStream;

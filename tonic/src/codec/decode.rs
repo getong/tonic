@@ -365,11 +365,18 @@ impl<T> Streaming<T> {
 
         // Trailers were not caught during poll_next and thus lets poll for
         // them manually.
-        let map = future::poll_fn(|cx| Pin::new(&mut self.inner.body).poll_trailers(cx))
-            .await
-            .map_err(|e| Status::from_error(Box::new(e)));
-
-        map.map(|x| x.map(MetadataMap::from_headers))
+        let map = future::poll_fn(|cx| Pin::new(&mut self.inner.body).poll_frame(cx)).await;
+        match map {
+            Some(Ok(frame)) => match frame.into_trailers() {
+                Ok(headers) => Ok(Some(MetadataMap::from_headers(headers))),
+                Err(_frame) => {
+                    let orig = Status::new(Code::OutOfRange, "Unexpected data from stream");
+                    Err(Status::from_error(Box::new(orig)))
+                }
+            },
+            Some(Err(err)) => Err(Status::from_error(Box::new(err))),
+            None => Ok(None),
+        }
     }
 
     fn decode_chunk(&mut self) -> Result<Option<T>, Status> {

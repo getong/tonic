@@ -119,7 +119,8 @@ where
     }
 }
 
-impl<S, F, ReqIncoming, ResIncoming> Service<http::Request<ReqIncoming>> for InterceptedService<S, F>
+impl<S, F, ReqIncoming, ResIncoming> Service<http::Request<ReqIncoming>>
+    for InterceptedService<S, F>
 where
     ResIncoming: Default + http_body::Body<Data = Bytes> + Send + 'static,
     F: Interceptor,

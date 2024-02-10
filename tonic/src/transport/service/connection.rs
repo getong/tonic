@@ -4,9 +4,9 @@ use crate::{
     transport::{BoxFuture, Endpoint},
 };
 use http::Uri;
-use hyper_util::client::legacy::Builder;
-use hyper_util::client::legacy::connect::Connection as HyperConnection;
 use hyper_util::client::legacy::connect::Connect as HyperConnect;
+use hyper_util::client::legacy::connect::Connection as HyperConnection;
+use hyper_util::client::legacy::Builder;
 use std::{
     fmt,
     task::{Context, Poll},
