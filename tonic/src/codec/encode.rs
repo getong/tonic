@@ -5,7 +5,7 @@ use super::{BufferSettings, EncodeBuf, Encoder, DEFAULT_MAX_SEND_MESSAGE_SIZE, H
 use crate::{Code, Status};
 use bytes::{BufMut, Bytes, BytesMut};
 use http::HeaderMap;
-use http_body::Body;
+use http_body::{Frame, Body};
 use pin_project::pin_project;
 use std::{
     pin::Pin,
@@ -19,7 +19,7 @@ pub(crate) fn encode_server<T, U>(
     compression_encoding: Option<CompressionEncoding>,
     compression_override: SingleMessageCompressionOverride,
     max_message_size: Option<usize>,
-) -> EncodeIncoming<impl Stream<Item = Result<Bytes, Status>>>
+) -> EncodeBody<impl Stream<Item = Result<Bytes, Status>>>
 where
     T: Encoder<Error = Status>,
     U: Stream<Item = Result<T::Item, Status>>,
@@ -32,7 +32,7 @@ where
         max_message_size,
     );
 
-    EncodeIncoming::new_server(stream)
+    EncodeBody::new_server(stream)
 }
 
 pub(crate) fn encode_client<T, U>(
@@ -40,7 +40,7 @@ pub(crate) fn encode_client<T, U>(
     source: U,
     compression_encoding: Option<CompressionEncoding>,
     max_message_size: Option<usize>,
-) -> EncodeIncoming<impl Stream<Item = Result<Bytes, Status>>>
+) -> EncodeBody<impl Stream<Item = Result<Bytes, Status>>>
 where
     T: Encoder<Error = Status>,
     U: Stream<Item = T::Item>,
@@ -52,7 +52,7 @@ where
         SingleMessageCompressionOverride::default(),
         max_message_size,
     );
-    EncodeIncoming::new_client(stream)
+    EncodeBody::new_client(stream)
 }
 
 /// Combinator for efficient encoding of messages into reasonably sized buffers.
@@ -257,7 +257,7 @@ enum Role {
 
 #[pin_project]
 #[derive(Debug)]
-pub(crate) struct EncodeIncoming<S> {
+pub(crate) struct EncodeBody<S> {
     #[pin]
     inner: S,
     state: EncodeState,
@@ -270,7 +270,7 @@ struct EncodeState {
     is_end_stream: bool,
 }
 
-impl<S> EncodeIncoming<S>
+impl<S> EncodeBody<S>
 where
     S: Stream<Item = Result<Bytes, Status>>,
 {
@@ -319,7 +319,7 @@ impl EncodeState {
     }
 }
 
-impl<S> Incoming for EncodeIncoming<S>
+impl<S> Body for EncodeBody<S>
 where
     S: Stream<Item = Result<Bytes, Status>>,
 {
@@ -330,13 +330,13 @@ where
         self.state.is_end_stream
     }
 
-    fn poll_data(
+    fn poll_frame(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-    ) -> Poll<Option<Result<Self::Data, Self::Error>>> {
+    ) -> Poll<Option<Result<Frame<Self::Data, Self::Error>>>> {
         let self_proj = self.project();
         match ready!(self_proj.inner.poll_next(cx)) {
-            Some(Ok(d)) => Some(Ok(d)).into(),
+            Some(Ok(d)) => Some(Ok(Frame::data(d))).into(),
             Some(Err(status)) => match self_proj.state.role {
                 Role::Client => Some(Err(status)).into(),
                 Role::Server => {
@@ -348,10 +348,5 @@ where
         }
     }
 
-    fn poll_trailers(
-        self: Pin<&mut Self>,
-        _cx: &mut Context<'_>,
-    ) -> Poll<Result<Option<HeaderMap>, Status>> {
-        Poll::Ready(self.project().state.trailers())
-    }
+
 }

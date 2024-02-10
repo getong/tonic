@@ -210,8 +210,8 @@ impl<T> Grpc<T> {
     ) -> Result<Response<M2>, Status>
     where
         T: GrpcService<BoxBody>,
-        T::ResponseIncoming: Incoming + Send + 'static,
-        <T::ResponseIncoming as Incoming>::Error: Into<crate::Error>,
+        T::ResponseBody: Body + Send + 'static,
+        <T::ResponseBody as Body>::Error: Into<crate::Error>,
         C: Codec<Encode = M1, Decode = M2>,
         M1: Send + Sync + 'static,
         M2: Send + Sync + 'static,
@@ -229,8 +229,8 @@ impl<T> Grpc<T> {
     ) -> Result<Response<M2>, Status>
     where
         T: GrpcService<BoxBody>,
-        T::ResponseIncoming: Incoming + Send + 'static,
-        <T::ResponseIncoming as Incoming>::Error: Into<crate::Error>,
+        T::ResponseBody: Body + Send + 'static,
+        <T::ResponseBody as Body>::Error: Into<crate::Error>,
         S: Stream<Item = M1> + Send + 'static,
         C: Codec<Encode = M1, Decode = M2>,
         M1: Send + Sync + 'static,
@@ -266,8 +266,8 @@ impl<T> Grpc<T> {
     ) -> Result<Response<Streaming<M2>>, Status>
     where
         T: GrpcService<BoxBody>,
-        T::ResponseIncoming: Incoming + Send + 'static,
-        <T::ResponseIncoming as Incoming>::Error: Into<crate::Error>,
+        T::ResponseBody: Body + Send + 'static,
+        <T::ResponseBody as Body>::Error: Into<crate::Error>,
         C: Codec<Encode = M1, Decode = M2>,
         M1: Send + Sync + 'static,
         M2: Send + Sync + 'static,
@@ -285,8 +285,8 @@ impl<T> Grpc<T> {
     ) -> Result<Response<Streaming<M2>>, Status>
     where
         T: GrpcService<BoxBody>,
-        T::ResponseIncoming: Incoming + Send + 'static,
-        <T::ResponseIncoming as Incoming>::Error: Into<crate::Error>,
+        T::ResponseBody: Body + Send + 'static,
+        <T::ResponseBody as Body>::Error: Into<crate::Error>,
         S: Stream<Item = M1> + Send + 'static,
         C: Codec<Encode = M1, Decode = M2>,
         M1: Send + Sync + 'static,
@@ -321,12 +321,12 @@ impl<T> Grpc<T> {
     fn create_response<M2>(
         &self,
         decoder: impl Decoder<Item = M2, Error = Status> + Send + 'static,
-        response: http::Response<T::ResponseIncoming>,
+        response: http::Response<T::ResponseBody>,
     ) -> Result<Response<Streaming<M2>>, Status>
     where
         T: GrpcService<BoxBody>,
-        T::ResponseIncoming: Incoming + Send + 'static,
-        <T::ResponseIncoming as Incoming>::Error: Into<crate::Error>,
+        T::ResponseBody: Body + Send + 'static,
+        <T::ResponseBody as Body>::Error: Into<crate::Error>,
     {
         let encoding = CompressionEncoding::from_encoding_header(
             response.headers(),

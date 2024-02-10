@@ -12,7 +12,7 @@ use std::{
 };
 use tokio::{
     io::{AsyncRead, AsyncWrite},
-    net::TcpListener,
+  net::{TcpStream, TcpListener},
 };
 use tokio_stream::{Stream, StreamExt};
 
@@ -126,11 +126,11 @@ enum SelectOutput<A> {
 /// An incoming stream, usable with [Router::serve_with_incoming](super::Router::serve_with_incoming),
 /// of `AsyncRead + AsyncWrite` that communicate with clients that connect to a socket address.
 #[derive(Debug)]
-pub struct TcpIncoming {
-    inner: TcpListener,
+pub struct TcpBody {
+  inner: TcpListener,
 }
 
-impl TcpIncoming {
+impl TcpBody {
     /// Creates an instance by binding (opening) the specified socket address
     /// to which the specified TCP 'nodelay' and 'keepalive' parameters are applied.
     /// Returns a TcpIncoming if the socket address was successfully bound.
@@ -170,7 +170,7 @@ impl TcpIncoming {
         let mut inner = TcpListener::bind(&addr).await?;
         inner.set_nodelay(nodelay);
         inner.set_keepalive(keepalive);
-        Ok(TcpIncoming { inner })
+        Ok(TcpBody { inner })
     }
 
     /// Creates a new `TcpIncoming` from an existing `tokio::net::TcpListener`.
@@ -181,11 +181,11 @@ impl TcpIncoming {
     ) -> Result<Self, crate::Error> {
         listener.set_nodelay(nodelay);
         listener.set_keepalive(keepalive);
-        Ok(TcpIncoming { inner })
+      Ok(TcpBody { inner: listener })
     }
 }
 
-impl Stream for TcpIncoming {
+impl Stream for TcpBody {
     type Item = Result<TcpStream, std::io::Error>;
 
     fn poll_next(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
