@@ -119,7 +119,7 @@ impl Service<Request<Incoming>> for Routes {
 }
 
 #[pin_project]
-pub struct RoutesFuture(#[pin] axum::routing::future::RouteFuture<Incoming, Infallible>);
+pub struct RoutesFuture(#[pin] axum::routing::future::RouteFuture<Incoming>);
 
 impl fmt::Debug for RoutesFuture {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

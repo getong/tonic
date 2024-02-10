@@ -333,7 +333,7 @@ where
     fn poll_frame(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-    ) -> Poll<Option<Result<Frame<Self::Data, Self::Error>>>> {
+    ) -> Poll<Option<Result<Frame<Self::Data>, Self::Error>>> {
         let self_proj = self.project();
         match ready!(self_proj.inner.poll_next(cx)) {
             Some(Ok(d)) => Some(Ok(Frame::data(d))).into(),

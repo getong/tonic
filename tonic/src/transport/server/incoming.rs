@@ -162,7 +162,7 @@ impl TcpBody {
     ///    .serve_with_incoming(tinc);
     /// # Ok(())
     /// # }
-    pub fn new(
+    pub async fn new(
         addr: SocketAddr,
         nodelay: bool,
         keepalive: Option<Duration>,
