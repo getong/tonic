@@ -15,7 +15,7 @@ use tracing::{debug, trace};
 
 /// Streaming requests and responses.
 ///
-/// This will wrap some inner [`Body`] and [`Decoder`] and provide an interface
+/// This will wrap some inner [`Incoming`] and [`Decoder`] and provide an interface
 /// to fetch the message stream and trailing metadata
 pub struct Streaming<T> {
     decoder: Box<dyn Decoder<Item = T, Error = Status> + Send + 'static>,
@@ -38,7 +38,7 @@ impl<T> Unpin for Streaming<T> {}
 #[derive(Debug, Clone, Copy)]
 enum State {
     ReadHeader,
-    ReadBody {
+    ReadIncoming {
         compression: Option<CompressionEncoding>,
         len: usize,
     },
@@ -61,7 +61,7 @@ impl<T> Streaming<T> {
         max_message_size: Option<usize>,
     ) -> Self
     where
-        B: Body + Send + 'static,
+        B: Incoming + Send + 'static,
         B::Error: Into<crate::Error>,
         D: Decoder<Item = T, Error = Status> + Send + 'static,
     {
@@ -76,7 +76,7 @@ impl<T> Streaming<T> {
 
     pub(crate) fn new_empty<B, D>(decoder: D, body: B) -> Self
     where
-        B: Body + Send + 'static,
+        B: Incoming + Send + 'static,
         B::Error: Into<crate::Error>,
         D: Decoder<Item = T, Error = Status> + Send + 'static,
     {
@@ -91,7 +91,7 @@ impl<T> Streaming<T> {
         max_message_size: Option<usize>,
     ) -> Self
     where
-        B: Body + Send + 'static,
+        B: Incoming + Send + 'static,
         B::Error: Into<crate::Error>,
         D: Decoder<Item = T, Error = Status> + Send + 'static,
     {
@@ -112,7 +112,7 @@ impl<T> Streaming<T> {
         max_message_size: Option<usize>,
     ) -> Self
     where
-        B: Body + Send + 'static,
+        B: Incoming + Send + 'static,
         B::Error: Into<crate::Error>,
         D: Decoder<Item = T, Error = Status> + Send + 'static,
     {
@@ -191,13 +191,13 @@ impl StreamingInner {
 
             self.buf.reserve(len);
 
-            self.state = State::ReadBody {
+            self.state = State::ReadIncoming {
                 compression: compression_encoding,
                 len,
             }
         }
 
-        if let State::ReadBody { len, compression } = self.state {
+        if let State::ReadIncoming { len, compression } = self.state {
             // if we haven't read enough of the message then return and keep
             // reading
             if self.buf.remaining() < len || self.buf.len() < len {

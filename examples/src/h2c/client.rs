@@ -42,7 +42,7 @@ mod h2c {
     }
 
     impl Service<http::Request<BoxBody>> for H2cChannel {
-        type Response = http::Response<hyper::Body>;
+        type Response = http::Response<hyper::body::Incoming>;
         type Error = hyper::Error;
         type Future =
             Pin<Box<dyn std::future::Future<Output = Result<Self::Response, Self::Error>> + Send>>;
@@ -60,7 +60,7 @@ mod h2c {
                 let h2c_req = hyper::Request::builder()
                     .uri(origin)
                     .header(http::header::UPGRADE, "h2c")
-                    .body(hyper::Body::empty())
+                    .body(hyper::body::Incoming::empty())
                     .unwrap();
 
                 let res = client.request(h2c_req).await.unwrap();

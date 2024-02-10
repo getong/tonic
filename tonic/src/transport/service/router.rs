@@ -3,7 +3,7 @@ use crate::{
     server::NamedService,
 };
 use http::{Request, Response};
-use hyper::Body;
+use hyper::body::Incoming;
 use pin_project::pin_project;
 use std::{
     convert::Infallible,
@@ -31,7 +31,7 @@ impl RoutesBuilder {
     /// Add a new service.
     pub fn add_service<S>(&mut self, svc: S) -> &mut Self
     where
-        S: Service<Request<Body>, Response = Response<BoxBody>, Error = Infallible>
+        S: Service<Request<Incoming>, Response = Response<BoxBody>, Error = Infallible>
             + NamedService
             + Clone
             + Send
@@ -53,7 +53,7 @@ impl Routes {
     /// Create a new routes with `svc` already added to it.
     pub fn new<S>(svc: S) -> Self
     where
-        S: Service<Request<Body>, Response = Response<BoxBody>, Error = Infallible>
+        S: Service<Request<Incoming>, Response = Response<BoxBody>, Error = Infallible>
             + NamedService
             + Clone
             + Send
@@ -68,7 +68,7 @@ impl Routes {
     /// Add a new service.
     pub fn add_service<S>(mut self, svc: S) -> Self
     where
-        S: Service<Request<Body>, Response = Response<BoxBody>, Error = Infallible>
+        S: Service<Request<Incoming>, Response = Response<BoxBody>, Error = Infallible>
             + NamedService
             + Clone
             + Send
@@ -103,7 +103,7 @@ async fn unimplemented() -> impl axum::response::IntoResponse {
     (status, headers)
 }
 
-impl Service<Request<Body>> for Routes {
+impl Service<Request<Incoming>> for Routes {
     type Response = Response<BoxBody>;
     type Error = crate::Error;
     type Future = RoutesFuture;
@@ -113,13 +113,13 @@ impl Service<Request<Body>> for Routes {
         Poll::Ready(Ok(()))
     }
 
-    fn call(&mut self, req: Request<Body>) -> Self::Future {
+    fn call(&mut self, req: Request<Incoming>) -> Self::Future {
         RoutesFuture(self.router.call(req))
     }
 }
 
 #[pin_project]
-pub struct RoutesFuture(#[pin] axum::routing::future::RouteFuture<Body, Infallible>);
+pub struct RoutesFuture(#[pin] axum::routing::future::RouteFuture<Incoming, Infallible>);
 
 impl fmt::Debug for RoutesFuture {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

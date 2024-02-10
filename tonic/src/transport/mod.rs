@@ -53,14 +53,14 @@
 //! # async fn do_thing() -> Result<(), Box<dyn std::error::Error>> {
 //! # #[derive(Clone)]
 //! # pub struct Svc;
-//! # impl Service<hyper::Request<hyper::Body>> for Svc {
+//! # impl Service<hyper::Request<hyper::body::Incoming>> for Svc {
 //! #   type Response = hyper::Response<tonic::body::BoxBody>;
 //! #   type Error = tonic::Status;
 //! #   type Future = std::future::Ready<Result<Self::Response, Self::Error>>;
 //! #   fn poll_ready(&mut self, _cx: &mut std::task::Context<'_>) -> std::task::Poll<Result<(), Self::Error>> {
 //! #       Ok(()).into()
 //! #  }
-//! #   fn call(&mut self, _req: hyper::Request<hyper::Body>) -> Self::Future {
+//! #   fn call(&mut self, _req: hyper::Request<hyper::body::Incoming>) -> Self::Future {
 //! #       unimplemented!()
 //! #   }
 //! # }
@@ -107,8 +107,9 @@ pub use self::service::grpc_timeout::TimeoutExpired;
 #[cfg(feature = "tls")]
 #[cfg_attr(docsrs, doc(cfg(feature = "tls")))]
 pub use self::tls::Certificate;
-pub use axum::{body::BoxBody as AxumBoxBody, Router as AxumRouter};
-pub use hyper::{Body, Uri};
+pub use axum::{//body::BoxBody as AxumBoxBody,
+               Router as AxumRouter};
+pub use hyper::{body::Incoming, Uri};
 
 pub(crate) use self::service::executor::Executor;
 

@@ -54,18 +54,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .serve(make_service_fn(move |_| {
             let mut tonic = tonic.clone();
             std::future::ready(Ok::<_, Infallible>(tower::service_fn(
-                move |req: hyper::Request<hyper::Body>| match req.version() {
+                move |req: hyper::Request<hyper::body::Incoming>| match req.version() {
                     Version::HTTP_11 | Version::HTTP_10 => Either::Left({
                         let res = warp.call(req);
                         Box::pin(async move {
-                            let res = res.await.map(|res| res.map(EitherBody::Left))?;
+                            let res = res.await.map(|res| res.map(EitherIncoming::Left))?;
                             Ok::<_, Error>(res)
                         })
                     }),
                     Version::HTTP_2 => Either::Right({
                         let res = tonic.call(req);
                         Box::pin(async move {
-                            let res = res.await.map(|res| res.map(EitherBody::Right))?;
+                            let res = res.await.map(|res| res.map(EitherIncoming::Right))?;
                             Ok::<_, Error>(res)
                         })
                     }),
@@ -78,12 +78,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-enum EitherBody<A, B> {
+enum EitherIncoming<A, B> {
     Left(A),
     Right(B),
 }
 
-impl<A, B> http_body::Body for EitherBody<A, B>
+impl<A, B> http_body::Body for EitherIncoming<A, B>
 where
     A: http_body::Body + Send + Unpin,
     B: http_body::Body<Data = A::Data> + Send + Unpin,
@@ -95,8 +95,8 @@ where
 
     fn is_end_stream(&self) -> bool {
         match self {
-            EitherBody::Left(b) => b.is_end_stream(),
-            EitherBody::Right(b) => b.is_end_stream(),
+            EitherIncoming::Left(b) => b.is_end_stream(),
+            EitherIncoming::Right(b) => b.is_end_stream(),
         }
     }
 
@@ -105,8 +105,8 @@ where
         cx: &mut Context<'_>,
     ) -> Poll<Option<Result<Self::Data, Self::Error>>> {
         match self.get_mut() {
-            EitherBody::Left(b) => Pin::new(b).poll_data(cx).map(map_option_err),
-            EitherBody::Right(b) => Pin::new(b).poll_data(cx).map(map_option_err),
+            EitherIncoming::Left(b) => Pin::new(b).poll_data(cx).map(map_option_err),
+            EitherIncoming::Right(b) => Pin::new(b).poll_data(cx).map(map_option_err),
         }
     }
 
@@ -115,8 +115,8 @@ where
         cx: &mut Context<'_>,
     ) -> Poll<Result<Option<http::HeaderMap>, Self::Error>> {
         match self.get_mut() {
-            EitherBody::Left(b) => Pin::new(b).poll_trailers(cx).map_err(Into::into),
-            EitherBody::Right(b) => Pin::new(b).poll_trailers(cx).map_err(Into::into),
+            EitherIncoming::Left(b) => Pin::new(b).poll_trailers(cx).map_err(Into::into),
+            EitherIncoming::Right(b) => Pin::new(b).poll_trailers(cx).map_err(Into::into),
         }
     }
 }

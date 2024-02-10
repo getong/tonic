@@ -3,7 +3,7 @@
 use http_body::Body;
 
 /// A type erased HTTP body used for tonic services.
-pub type BoxBody = http_body::combinators::UnsyncBoxBody<bytes::Bytes, crate::Status>;
+pub type BoxBody = http_body_util::combinators::UnsyncBoxBody<bytes::Bytes, crate::Status>;
 
 /// Convert a [`http_body::Body`] into a [`BoxBody`].
 pub(crate) fn boxed<B>(body: B) -> BoxBody

@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use base64::Engine as _;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use hyper::http::{header, StatusCode};
-use hyper::{Body, Client, Method, Request, Uri};
+use hyper::{Incoming, Client, Method, Request, Uri};
 use prost::Message;
 use tokio::net::TcpListener;
 use tokio_stream::wrappers::TcpListenerStream;
@@ -102,7 +102,7 @@ fn encode_body() -> Bytes {
     buf.split_to(len + 5).freeze()
 }
 
-fn build_request(base_uri: String, content_type: &str, accept: &str) -> Request<Body> {
+fn build_request(base_uri: String, content_type: &str, accept: &str) -> Request<Incoming> {
     use header::{ACCEPT, CONTENT_TYPE, ORIGIN};
 
     let request_uri = format!("{}/{}/{}", base_uri, "test.Test", "UnaryCall")
@@ -123,11 +123,11 @@ fn build_request(base_uri: String, content_type: &str, accept: &str) -> Request<
         .header(ORIGIN, "http://example.com")
         .header(ACCEPT, format!("application/{}", accept))
         .uri(request_uri)
-        .body(Body::from(bytes))
+        .body(Incoming::from(bytes))
         .unwrap()
 }
 
-async fn decode_body(body: Body, content_type: &str) -> (Output, Bytes) {
+async fn decode_body(body: Incoming, content_type: &str) -> (Output, Bytes) {
     let mut body = hyper::body::to_bytes(body).await.unwrap();
 
     if content_type == "application/grpc-web-text+proto" {

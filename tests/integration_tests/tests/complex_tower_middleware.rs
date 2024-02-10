@@ -53,13 +53,13 @@ struct MyService<S> {
     inner: S,
 }
 
-impl<S, R, ResBody> Service<R> for MyService<S>
+impl<S, R, ResIncoming> Service<R> for MyService<S>
 where
-    S: Service<R, Response = http::Response<ResBody>>,
+    S: Service<R, Response = http::Response<ResIncoming>>,
 {
-    type Response = http::Response<MyBody<ResBody>>;
+    type Response = http::Response<MyIncoming<ResIncoming>>;
     type Error = BoxError;
-    type Future = MyFuture<S::Future, ResBody>;
+    type Future = MyFuture<S::Future, ResIncoming>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         unimplemented!()
@@ -79,20 +79,20 @@ impl<F, E, B> Future for MyFuture<F, B>
 where
     F: Future<Output = Result<http::Response<B>, E>>,
 {
-    type Output = Result<http::Response<MyBody<B>>, BoxError>;
+    type Output = Result<http::Response<MyIncoming<B>>, BoxError>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         unimplemented!()
     }
 }
 
-struct MyBody<B> {
+struct MyIncoming<B> {
     inner: B,
 }
 
-impl<B> Body for MyBody<B>
+impl<B> Incoming for MyIncoming<B>
 where
-    B: Body,
+    B: Incoming,
 {
     type Data = B::Data;
     type Error = BoxError;

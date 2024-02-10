@@ -26,9 +26,9 @@ impl<S> GrpcTimeout<S> {
     }
 }
 
-impl<S, ReqBody> Service<Request<ReqBody>> for GrpcTimeout<S>
+impl<S, ReqIncoming> Service<Request<ReqIncoming>> for GrpcTimeout<S>
 where
-    S: Service<Request<ReqBody>>,
+    S: Service<Request<ReqIncoming>>,
     S::Error: Into<crate::Error>,
 {
     type Response = S::Response;
@@ -39,7 +39,7 @@ where
         self.inner.poll_ready(cx).map_err(Into::into)
     }
 
-    fn call(&mut self, req: Request<ReqBody>) -> Self::Future {
+    fn call(&mut self, req: Request<ReqIncoming>) -> Self::Future {
         let client_timeout = try_parse_grpc_timeout(req.headers()).unwrap_or_else(|e| {
             tracing::trace!("Error parsing `grpc-timeout` header {:?}", e);
             None

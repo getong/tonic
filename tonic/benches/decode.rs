@@ -16,7 +16,7 @@ macro_rules! bench {
                 .expect("runtime");
 
             let payload = make_payload($message_size, $message_count);
-            let body = MockBody::new(payload, $chunk_size);
+            let body = MockIncoming::new(payload, $chunk_size);
             b.bytes = body.len() as u64;
 
             b.iter(|| {
@@ -39,14 +39,14 @@ macro_rules! bench {
 }
 
 #[derive(Clone)]
-struct MockBody {
+struct MockIncoming {
     data: Bytes,
     chunk_size: usize,
 }
 
-impl MockBody {
+impl MockIncoming {
     pub fn new(data: Bytes, chunk_size: usize) -> Self {
-        MockBody { data, chunk_size }
+        MockIncoming { data, chunk_size }
     }
 
     pub fn len(&self) -> usize {
@@ -54,7 +54,7 @@ impl MockBody {
     }
 }
 
-impl Body for MockBody {
+impl Incoming for MockIncoming {
     type Data = Bytes;
     type Error = Status;
 
@@ -78,7 +78,7 @@ impl Body for MockBody {
     }
 }
 
-impl std::fmt::Debug for MockBody {
+impl std::fmt::Debug for MockIncoming {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         let sample = self.data.iter().take(10).collect::<Vec<_>>();
         write!(f, "{:?}...({})", sample, self.data.len())

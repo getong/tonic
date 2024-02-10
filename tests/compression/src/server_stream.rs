@@ -22,8 +22,8 @@ async fn client_enabled_server_enabled(encoding: CompressionEncoding) {
             Server::builder()
                 .layer(
                     ServiceBuilder::new()
-                        .layer(MapResponseBodyLayer::new(move |body| {
-                            util::CountBytesBody {
+                        .layer(MapResponseIncomingLayer::new(move |body| {
+                            util::CountBytesIncoming {
                                 inner: body,
                                 counter: response_bytes_counter.clone(),
                             }
@@ -86,8 +86,8 @@ async fn client_disabled_server_enabled(encoding: CompressionEncoding) {
             Server::builder()
                 .layer(
                     ServiceBuilder::new()
-                        .layer(MapResponseBodyLayer::new(move |body| {
-                            util::CountBytesBody {
+                        .layer(MapResponseIncomingLayer::new(move |body| {
+                            util::CountBytesIncoming {
                                 inner: body,
                                 counter: response_bytes_counter.clone(),
                             }
@@ -137,8 +137,8 @@ async fn client_enabled_server_disabled(encoding: CompressionEncoding) {
             Server::builder()
                 .layer(
                     ServiceBuilder::new()
-                        .layer(MapResponseBodyLayer::new(move |body| {
-                            util::CountBytesBody {
+                        .layer(MapResponseIncomingLayer::new(move |body| {
+                            util::CountBytesIncoming {
                                 inner: body,
                                 counter: response_bytes_counter.clone(),
                             }

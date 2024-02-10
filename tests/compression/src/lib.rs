@@ -16,7 +16,7 @@ use tonic::{
     Request, Response, Status, Streaming,
 };
 use tower::{layer::layer_fn, service_fn, Service, ServiceBuilder};
-use tower_http::{map_request_body::MapRequestBodyLayer, map_response_body::MapResponseBodyLayer};
+use tower_http::{map_request_body::MapRequestIncomingLayer, map_response_body::MapResponseIncomingLayer};
 
 mod bidirectional_stream;
 mod client_stream;

@@ -1,4 +1,4 @@
-use hyper::{Body, Request as HyperRequest, Response as HyperResponse};
+use hyper::{Incoming, Request as HyperRequest, Response as HyperResponse};
 use integration_tests::{
     pb::{test_client, test_server, Input, Output},
     BoxFuture,
@@ -112,9 +112,9 @@ struct InterceptedService<S> {
     inner: S,
 }
 
-impl<S> Service<HyperRequest<Body>> for InterceptedService<S>
+impl<S> Service<HyperRequest<Incoming>> for InterceptedService<S>
 where
-    S: Service<HyperRequest<Body>, Response = HyperResponse<BoxBody>>
+    S: Service<HyperRequest<Incoming>, Response = HyperResponse<BoxBody>>
         + NamedService
         + Clone
         + Send
@@ -129,7 +129,7 @@ where
         self.inner.poll_ready(cx)
     }
 
-    fn call(&mut self, mut req: HyperRequest<Body>) -> Self::Future {
+    fn call(&mut self, mut req: HyperRequest<Incoming>) -> Self::Future {
         let clone = self.inner.clone();
         let mut inner = std::mem::replace(&mut self.inner, clone);
 

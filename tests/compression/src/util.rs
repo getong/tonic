@@ -13,7 +13,7 @@ use std::{
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 use tonic::codec::CompressionEncoding;
 use tonic::transport::{server::Connected, Channel};
-use tower_http::map_request_body::MapRequestBodyLayer;
+use tower_http::map_request_body::MapRequestIncomingLayer;
 
 macro_rules! parametrized_tests {
     ($fn_name:ident, $($test_name:ident: $input:expr),+ $(,)?) => {
@@ -33,15 +33,15 @@ pub(crate) use parametrized_tests;
 
 /// A body that tracks how many bytes passes through it
 #[pin_project]
-pub struct CountBytesBody<B> {
+pub struct CountBytesIncoming<B> {
     #[pin]
     pub inner: B,
     pub counter: Arc<AtomicUsize>,
 }
 
-impl<B> Body for CountBytesBody<B>
+impl<B> Incoming for CountBytesIncoming<B>
 where
-    B: Body<Data = Bytes>,
+    B: Incoming<Data = Bytes>,
 {
     type Data = B::Data;
     type Error = B::Error;
@@ -81,9 +81,9 @@ where
 #[allow(dead_code)]
 pub fn measure_request_body_size_layer(
     bytes_sent_counter: Arc<AtomicUsize>,
-) -> MapRequestBodyLayer<impl Fn(hyper::Body) -> hyper::Body + Clone> {
-    MapRequestBodyLayer::new(move |mut body: hyper::Body| {
-        let (mut tx, new_body) = hyper::Body::channel();
+) -> MapRequestIncomingLayer<impl Fn(hyper::body::Incoming) -> hyper::body::Incoming + Clone> {
+    MapRequestIncomingLayer::new(move |mut body: hyper::body::Incoming| {
+        let (mut tx, new_body) = hyper::body::Incoming::channel();
 
         let bytes_sent_counter = bytes_sent_counter.clone();
         tokio::spawn(async move {
@@ -128,7 +128,7 @@ impl AssertRightEncoding {
         Self { encoding }
     }
 
-    pub fn call<B: Body>(self, req: http::Request<B>) -> http::Request<B> {
+    pub fn call<B: Incoming>(self, req: http::Request<B>) -> http::Request<B> {
         let expected = match self.encoding {
             CompressionEncoding::Gzip => "gzip",
             CompressionEncoding::Zstd => "zstd",

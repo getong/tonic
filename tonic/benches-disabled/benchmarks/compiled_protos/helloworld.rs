@@ -32,10 +32,10 @@ pub mod client {
     impl<T> GreeterClient<T>
     where
         T: tonic::client::GrpcService<tonic::body::BoxBody>,
-        T::ResponseBody: Body + Send + 'static,
+        T::ResponseIncoming: Incoming + Send + 'static,
         T::Error: Into<StdError>,
-        <T::ResponseBody as Body>::Error: Into<StdError> + Send,
-        <T::ResponseBody as Body>::Data: Into<bytes::Bytes> + Send,
+        <T::ResponseIncoming as Incoming>::Error: Into<StdError> + Send,
+        <T::ResponseIncoming as Incoming>::Data: Into<bytes::Bytes> + Send,
     {
         pub fn new(inner: T) -> Self {
             let inner = tonic::client::Grpc::new(inner);
@@ -120,14 +120,14 @@ pub mod server {
             ok(GreeterServerSvc::new(self.inner.clone()))
         }
     }
-    impl<T: Greeter> Service<http::Request<HyperBody>> for GreeterServerSvc<T> {
+    impl<T: Greeter> Service<http::Request<HyperIncoming>> for GreeterServerSvc<T> {
         type Response = http::Response<tonic::body::BoxBody>;
         type Error = Never;
         type Future = BoxFuture<Self::Response, Self::Error>;
         fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
             Poll::Ready(Ok(()))
         }
-        fn call(&mut self, req: http::Request<HyperBody>) -> Self::Future {
+        fn call(&mut self, req: http::Request<HyperIncoming>) -> Self::Future {
             let inner = self.inner.clone();
             match req.uri().path() {
                 "/helloworld.Greeter/SayHello" => {

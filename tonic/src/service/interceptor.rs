@@ -119,14 +119,14 @@ where
     }
 }
 
-impl<S, F, ReqBody, ResBody> Service<http::Request<ReqBody>> for InterceptedService<S, F>
+impl<S, F, ReqIncoming, ResIncoming> Service<http::Request<ReqIncoming>> for InterceptedService<S, F>
 where
-    ResBody: Default + http_body::Body<Data = Bytes> + Send + 'static,
+    ResIncoming: Default + http_body::Body<Data = Bytes> + Send + 'static,
     F: Interceptor,
-    S: Service<http::Request<ReqBody>, Response = http::Response<ResBody>>,
+    S: Service<http::Request<ReqIncoming>, Response = http::Response<ResIncoming>>,
     S::Error: Into<crate::Error>,
-    ResBody: http_body::Body<Data = bytes::Bytes> + Send + 'static,
-    ResBody::Error: Into<crate::Error>,
+    ResIncoming: http_body::Body<Data = bytes::Bytes> + Send + 'static,
+    ResIncoming::Error: Into<crate::Error>,
 {
     type Response = http::Response<BoxBody>;
     type Error = S::Error;
@@ -137,7 +137,7 @@ where
         self.inner.poll_ready(cx)
     }
 
-    fn call(&mut self, req: http::Request<ReqBody>) -> Self::Future {
+    fn call(&mut self, req: http::Request<ReqIncoming>) -> Self::Future {
         // It is bad practice to modify the body (i.e. Message) of the request via an interceptor.
         // To avoid exposing the body of the request to the interceptor function, we first remove it
         // here, allow the interceptor to modify the metadata and extensions, and then recreate the
@@ -240,9 +240,9 @@ mod tests {
     use tower::ServiceExt;
 
     #[derive(Debug, Default)]
-    struct TestBody;
+    struct TestIncoming;
 
-    impl http_body::Body for TestBody {
+    impl http_body::Body for TestIncoming {
         type Data = Bytes;
         type Error = Status;
 
@@ -263,7 +263,7 @@ mod tests {
 
     #[tokio::test]
     async fn doesnt_remove_headers_from_requests() {
-        let svc = tower::service_fn(|request: http::Request<TestBody>| async move {
+        let svc = tower::service_fn(|request: http::Request<TestIncoming>| async move {
             assert_eq!(
                 request
                     .headers()
@@ -272,7 +272,7 @@ mod tests {
                 "test-tonic"
             );
 
-            Ok::<_, Status>(http::Response::new(TestBody))
+            Ok::<_, Status>(http::Response::new(TestIncoming))
         });
 
         let svc = InterceptedService::new(svc, |request: crate::Request<()>| {
@@ -289,7 +289,7 @@ mod tests {
 
         let request = http::Request::builder()
             .header("user-agent", "test-tonic")
-            .body(TestBody)
+            .body(TestIncoming)
             .unwrap();
 
         svc.oneshot(request).await.unwrap();
@@ -300,15 +300,15 @@ mod tests {
         let message = "Blocked by the interceptor";
         let expected = Status::permission_denied(message).to_http();
 
-        let svc = tower::service_fn(|_: http::Request<TestBody>| async {
-            Ok::<_, Status>(http::Response::new(TestBody))
+        let svc = tower::service_fn(|_: http::Request<TestIncoming>| async {
+            Ok::<_, Status>(http::Response::new(TestIncoming))
         });
 
         let svc = InterceptedService::new(svc, |_: crate::Request<()>| {
             Err(Status::permission_denied(message))
         });
 
-        let request = http::Request::builder().body(TestBody).unwrap();
+        let request = http::Request::builder().body(TestIncoming).unwrap();
         let response = svc.oneshot(request).await.unwrap();
 
         assert_eq!(expected.status(), response.status());
@@ -318,17 +318,17 @@ mod tests {
 
     #[tokio::test]
     async fn doesnt_change_http_method() {
-        let svc = tower::service_fn(|request: http::Request<hyper::Body>| async move {
+        let svc = tower::service_fn(|request: http::Request<hyper::body::Incoming>| async move {
             assert_eq!(request.method(), http::Method::OPTIONS);
 
-            Ok::<_, hyper::Error>(hyper::Response::new(hyper::Body::empty()))
+            Ok::<_, hyper::Error>(hyper::Response::new(hyper::body::Incoming::empty()))
         });
 
         let svc = InterceptedService::new(svc, Ok);
 
         let request = http::Request::builder()
             .method(http::Method::OPTIONS)
-            .body(hyper::Body::empty())
+            .body(hyper::body::Incoming::empty())
             .unwrap();
 
         svc.oneshot(request).await.unwrap();

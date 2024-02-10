@@ -27,7 +27,7 @@ async fn client_enabled_server_enabled(encoding: CompressionEncoding) {
             Self { encoding }
         }
 
-        pub fn call<B: Body>(self, req: http::Request<B>) -> http::Request<B> {
+        pub fn call<B: Incoming>(self, req: http::Request<B>) -> http::Request<B> {
             let expected = match self.encoding {
                 CompressionEncoding::Gzip => "gzip",
                 CompressionEncoding::Zstd => "zstd",

@@ -26,9 +26,9 @@ impl<T> AddOrigin<T> {
     }
 }
 
-impl<T, ReqBody> Service<Request<ReqBody>> for AddOrigin<T>
+impl<T, ReqIncoming> Service<Request<ReqIncoming>> for AddOrigin<T>
 where
-    T: Service<Request<ReqBody>>,
+    T: Service<Request<ReqIncoming>>,
     T::Future: Send + 'static,
     T::Error: Into<crate::Error>,
 {
@@ -40,7 +40,7 @@ where
         self.inner.poll_ready(cx).map_err(Into::into)
     }
 
-    fn call(&mut self, req: Request<ReqBody>) -> Self::Future {
+    fn call(&mut self, req: Request<ReqIncoming>) -> Self::Future {
         if self.scheme.is_none() || self.authority.is_none() {
             let err = crate::transport::Error::new_invalid_uri();
             return Box::pin(async move { Err::<Self::Response, _>(err.into()) });

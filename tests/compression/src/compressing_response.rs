@@ -64,8 +64,8 @@ async fn client_enabled_server_enabled(encoding: CompressionEncoding) {
                             service,
                             encoding,
                         }))
-                        .layer(MapResponseBodyLayer::new(move |body| {
-                            util::CountBytesBody {
+                        .layer(MapResponseIncomingLayer::new(move |body| {
+                            util::CountBytesIncoming {
                                 inner: body,
                                 counter: response_bytes_counter.clone(),
                             }
@@ -117,8 +117,8 @@ async fn client_enabled_server_disabled(encoding: CompressionEncoding) {
                 // no compression enable on the server so responses should not be compressed
                 .layer(
                     ServiceBuilder::new()
-                        .layer(MapResponseBodyLayer::new(move |body| {
-                            util::CountBytesBody {
+                        .layer(MapResponseIncomingLayer::new(move |body| {
+                            util::CountBytesIncoming {
                                 inner: body,
                                 counter: response_bytes_counter.clone(),
                             }
@@ -158,8 +158,8 @@ async fn client_enabled_server_disabled_multi_encoding() {
                 // no compression enable on the server so responses should not be compressed
                 .layer(
                     ServiceBuilder::new()
-                        .layer(MapResponseBodyLayer::new(move |body| {
-                            util::CountBytesBody {
+                        .layer(MapResponseIncomingLayer::new(move |body| {
+                            util::CountBytesIncoming {
                                 inner: body,
                                 counter: response_bytes_counter.clone(),
                             }
@@ -230,8 +230,8 @@ async fn client_disabled(encoding: CompressionEncoding) {
                 .layer(
                     ServiceBuilder::new()
                         .layer(layer_fn(AssertCorrectAcceptEncoding))
-                        .layer(MapResponseBodyLayer::new(move |body| {
-                            util::CountBytesBody {
+                        .layer(MapResponseIncomingLayer::new(move |body| {
+                            util::CountBytesIncoming {
                                 inner: body,
                                 counter: response_bytes_counter.clone(),
                             }
@@ -321,8 +321,8 @@ async fn disabling_compression_on_single_response(encoding: CompressionEncoding)
             Server::builder()
                 .layer(
                     ServiceBuilder::new()
-                        .layer(MapResponseBodyLayer::new(move |body| {
-                            util::CountBytesBody {
+                        .layer(MapResponseIncomingLayer::new(move |body| {
+                            util::CountBytesIncoming {
                                 inner: body,
                                 counter: response_bytes_counter.clone(),
                             }
@@ -377,8 +377,8 @@ async fn disabling_compression_on_response_but_keeping_compression_on_stream(
             Server::builder()
                 .layer(
                     ServiceBuilder::new()
-                        .layer(MapResponseBodyLayer::new(move |body| {
-                            util::CountBytesBody {
+                        .layer(MapResponseIncomingLayer::new(move |body| {
+                            util::CountBytesIncoming {
                                 inner: body,
                                 counter: response_bytes_counter.clone(),
                             }
@@ -444,8 +444,8 @@ async fn disabling_compression_on_response_from_client_stream(encoding: Compress
             Server::builder()
                 .layer(
                     ServiceBuilder::new()
-                        .layer(MapResponseBodyLayer::new(move |body| {
-                            util::CountBytesBody {
+                        .layer(MapResponseIncomingLayer::new(move |body| {
+                            util::CountBytesIncoming {
                                 inner: body,
                                 counter: response_bytes_counter.clone(),
                             }

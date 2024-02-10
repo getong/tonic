@@ -28,7 +28,7 @@ macro_rules! t {
 ///
 /// Each request handler method accepts some service that implements the
 /// corresponding service trait and a http request that contains some body that
-/// implements some [`Body`].
+/// implements some [`Incoming`].
 pub struct Grpc<T> {
     codec: T,
     /// Which compression encodings does the server accept for requests?
@@ -225,7 +225,7 @@ where
     ) -> http::Response<BoxBody>
     where
         S: UnaryService<T::Decode, Response = T::Encode>,
-        B: Body + Send + 'static,
+        B: Incoming + Send + 'static,
         B::Error: Into<crate::Error> + Send,
     {
         let accept_encoding = CompressionEncoding::from_accept_encoding_header(
@@ -269,7 +269,7 @@ where
     where
         S: ServerStreamingService<T::Decode, Response = T::Encode>,
         S::ResponseStream: Send + 'static,
-        B: Body + Send + 'static,
+        B: Incoming + Send + 'static,
         B::Error: Into<crate::Error> + Send,
     {
         let accept_encoding = CompressionEncoding::from_accept_encoding_header(
@@ -309,7 +309,7 @@ where
     ) -> http::Response<BoxBody>
     where
         S: ClientStreamingService<T::Decode, Response = T::Encode>,
-        B: Body + Send + 'static,
+        B: Incoming + Send + 'static,
         B::Error: Into<crate::Error> + Send + 'static,
     {
         let accept_encoding = CompressionEncoding::from_accept_encoding_header(
@@ -343,7 +343,7 @@ where
     where
         S: StreamingService<T::Decode, Response = T::Encode> + Send,
         S::ResponseStream: Send + 'static,
-        B: Body + Send + 'static,
+        B: Incoming + Send + 'static,
         B::Error: Into<crate::Error> + Send,
     {
         let accept_encoding = CompressionEncoding::from_accept_encoding_header(
@@ -368,7 +368,7 @@ where
         request: http::Request<B>,
     ) -> Result<Request<T::Decode>, Status>
     where
-        B: Body + Send + 'static,
+        B: Incoming + Send + 'static,
         B::Error: Into<crate::Error> + Send,
     {
         let request_compression_encoding = self.request_encoding_if_supported(&request)?;
@@ -401,7 +401,7 @@ where
         request: http::Request<B>,
     ) -> Result<Request<Streaming<T::Decode>>, Status>
     where
-        B: Body + Send + 'static,
+        B: Incoming + Send + 'static,
         B::Error: Into<crate::Error> + Send,
     {
         let encoding = self.request_encoding_if_supported(&request)?;

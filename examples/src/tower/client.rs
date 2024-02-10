@@ -44,7 +44,7 @@ mod service {
     use std::pin::Pin;
     use std::task::{Context, Poll};
     use tonic::body::BoxBody;
-    use tonic::transport::Body;
+    use tonic::transport::Incoming;
     use tonic::transport::Channel;
     use tower::Service;
 
@@ -59,7 +59,7 @@ mod service {
     }
 
     impl Service<Request<BoxBody>> for AuthSvc {
-        type Response = Response<Body>;
+        type Response = Response<Incoming>;
         type Error = Box<dyn std::error::Error + Send + Sync>;
         #[allow(clippy::type_complexity)]
         type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;

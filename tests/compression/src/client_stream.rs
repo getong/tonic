@@ -27,7 +27,7 @@ async fn client_enabled_server_enabled(encoding: CompressionEncoding) {
             Self { encoding }
         }
 
-        pub fn call<B: Body>(self, req: http::Request<B>) -> http::Request<B> {
+        pub fn call<B: Incoming>(self, req: http::Request<B>) -> http::Request<B> {
             let expected = match self.encoding {
                 CompressionEncoding::Gzip => "gzip",
                 CompressionEncoding::Zstd => "zstd",
@@ -187,8 +187,8 @@ async fn compressing_response_from_client_stream(encoding: CompressionEncoding) 
             Server::builder()
                 .layer(
                     ServiceBuilder::new()
-                        .layer(MapResponseBodyLayer::new(move |body| {
-                            util::CountBytesBody {
+                        .layer(MapResponseIncomingLayer::new(move |body| {
+                            util::CountBytesIncoming {
                                 inner: body,
                                 counter: response_bytes_counter.clone(),
                             }

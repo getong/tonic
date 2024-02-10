@@ -26,9 +26,9 @@ impl<T> UserAgent<T> {
     }
 }
 
-impl<T, ReqBody> Service<Request<ReqBody>> for UserAgent<T>
+impl<T, ReqIncoming> Service<Request<ReqIncoming>> for UserAgent<T>
 where
-    T: Service<Request<ReqBody>>,
+    T: Service<Request<ReqIncoming>>,
 {
     type Response = T::Response;
     type Error = T::Error;
@@ -38,7 +38,7 @@ where
         self.inner.poll_ready(cx)
     }
 
-    fn call(&mut self, mut req: Request<ReqBody>) -> Self::Future {
+    fn call(&mut self, mut req: Request<ReqIncoming>) -> Self::Future {
         req.headers_mut()
             .insert(USER_AGENT, self.user_agent.clone());
 

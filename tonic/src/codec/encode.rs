@@ -19,7 +19,7 @@ pub(crate) fn encode_server<T, U>(
     compression_encoding: Option<CompressionEncoding>,
     compression_override: SingleMessageCompressionOverride,
     max_message_size: Option<usize>,
-) -> EncodeBody<impl Stream<Item = Result<Bytes, Status>>>
+) -> EncodeIncoming<impl Stream<Item = Result<Bytes, Status>>>
 where
     T: Encoder<Error = Status>,
     U: Stream<Item = Result<T::Item, Status>>,
@@ -32,7 +32,7 @@ where
         max_message_size,
     );
 
-    EncodeBody::new_server(stream)
+    EncodeIncoming::new_server(stream)
 }
 
 pub(crate) fn encode_client<T, U>(
@@ -40,7 +40,7 @@ pub(crate) fn encode_client<T, U>(
     source: U,
     compression_encoding: Option<CompressionEncoding>,
     max_message_size: Option<usize>,
-) -> EncodeBody<impl Stream<Item = Result<Bytes, Status>>>
+) -> EncodeIncoming<impl Stream<Item = Result<Bytes, Status>>>
 where
     T: Encoder<Error = Status>,
     U: Stream<Item = T::Item>,
@@ -52,7 +52,7 @@ where
         SingleMessageCompressionOverride::default(),
         max_message_size,
     );
-    EncodeBody::new_client(stream)
+    EncodeIncoming::new_client(stream)
 }
 
 /// Combinator for efficient encoding of messages into reasonably sized buffers.
@@ -257,7 +257,7 @@ enum Role {
 
 #[pin_project]
 #[derive(Debug)]
-pub(crate) struct EncodeBody<S> {
+pub(crate) struct EncodeIncoming<S> {
     #[pin]
     inner: S,
     state: EncodeState,
@@ -270,7 +270,7 @@ struct EncodeState {
     is_end_stream: bool,
 }
 
-impl<S> EncodeBody<S>
+impl<S> EncodeIncoming<S>
 where
     S: Stream<Item = Result<Bytes, Status>>,
 {
@@ -319,7 +319,7 @@ impl EncodeState {
     }
 }
 
-impl<S> Body for EncodeBody<S>
+impl<S> Incoming for EncodeIncoming<S>
 where
     S: Stream<Item = Result<Bytes, Status>>,
 {

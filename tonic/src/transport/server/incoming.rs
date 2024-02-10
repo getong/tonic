@@ -1,9 +1,9 @@
 use super::{Connected, Server};
 use crate::transport::service::ServerIo;
-use hyper::server::{
-    accept::Accept,
-    conn::{AddrIncoming},
-};
+// use hyper::server::{
+//     accept::Accept,
+//     conn::{AddrIncoming},
+// };
 use std::{
     net::SocketAddr,
     pin::{pin, Pin},
@@ -127,7 +127,7 @@ enum SelectOutput<A> {
 /// of `AsyncRead + AsyncWrite` that communicate with clients that connect to a socket address.
 #[derive(Debug)]
 pub struct TcpIncoming {
-    inner: AddrIncoming,
+    inner: TcpListener,
 }
 
 impl TcpIncoming {
@@ -139,13 +139,13 @@ impl TcpIncoming {
     /// ```no_run
     /// # use tower_service::Service;
     /// # use http::{request::Request, response::Response};
-    /// # use tonic::{body::BoxBody, server::NamedService, transport::{Body, Server, server::TcpIncoming}};
+    /// # use tonic::{body::BoxBody, server::NamedService, transport::{Incoming, Server, server::TcpIncoming}};
     /// # use core::convert::Infallible;
     /// # use std::error::Error;
     /// # fn main() { }  // Cannot have type parameters, hence instead define:
     /// # fn run<S>(some_service: S) -> Result<(), Box<dyn Error + Send + Sync>>
     /// # where
-    /// #   S: Service<Request<Body>, Response = Response<BoxBody>, Error = Infallible> + NamedService + Clone + Send + 'static,
+    /// #   S: Service<Request<Incoming>, Response = Response<BoxBody>, Error = Infallible> + NamedService + Clone + Send + 'static,
     /// #   S::Future: Send + 'static,
     /// # {
     /// // Find a free port
@@ -167,7 +167,7 @@ impl TcpIncoming {
         nodelay: bool,
         keepalive: Option<Duration>,
     ) -> Result<Self, crate::Error> {
-        let mut inner = AddrIncoming::bind(&addr)?;
+        let mut inner = TcpListener::bind(&addr).await?;
         inner.set_nodelay(nodelay);
         inner.set_keepalive(keepalive);
         Ok(TcpIncoming { inner })
@@ -175,13 +175,12 @@ impl TcpIncoming {
 
     /// Creates a new `TcpIncoming` from an existing `tokio::net::TcpListener`.
     pub fn from_listener(
-        listener: TcpListener,
+        mut listener: TcpListener,
         nodelay: bool,
         keepalive: Option<Duration>,
     ) -> Result<Self, crate::Error> {
-        let mut inner = AddrIncoming::from_listener(listener)?;
-        inner.set_nodelay(nodelay);
-        inner.set_keepalive(keepalive);
+        listener.set_nodelay(nodelay);
+        listener.set_keepalive(keepalive);
         Ok(TcpIncoming { inner })
     }
 }
@@ -189,8 +188,10 @@ impl TcpIncoming {
 impl Stream for TcpIncoming {
     type Item = Result<TcpStream, std::io::Error>;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        Pin::new(&mut self.inner).poll_accept(cx)
+    fn poll_next(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        loop {
+            return Pin::new(&mut self.inner).accept();
+        }
     }
 }
 

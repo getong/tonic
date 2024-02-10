@@ -166,8 +166,8 @@ pub mod server_reflection_client {
     where
         T: tonic::client::GrpcService<tonic::body::BoxBody>,
         T::Error: Into<StdError>,
-        T::ResponseBody: Body<Data = Bytes> + Send + 'static,
-        <T::ResponseBody as Body>::Error: Into<StdError> + Send,
+        T::ResponseIncoming: Incoming<Data = Bytes> + Send + 'static,
+        <T::ResponseIncoming as Incoming>::Error: Into<StdError> + Send,
     {
         pub fn new(inner: T) -> Self {
             let inner = tonic::client::Grpc::new(inner);
@@ -183,11 +183,11 @@ pub mod server_reflection_client {
         ) -> ServerReflectionClient<InterceptedService<T, F>>
         where
             F: tonic::service::Interceptor,
-            T::ResponseBody: Default,
+            T::ResponseIncoming: Default,
             T: tonic::codegen::Service<
                 http::Request<tonic::body::BoxBody>,
                 Response = http::Response<
-                    <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
+                    <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseIncoming,
                 >,
             >,
             <T as tonic::codegen::Service<
@@ -353,7 +353,7 @@ pub mod server_reflection_server {
     impl<T, B> tonic::codegen::Service<http::Request<B>> for ServerReflectionServer<T>
     where
         T: ServerReflection,
-        B: Body + Send + 'static,
+        B: Incoming + Send + 'static,
         B::Error: Into<StdError> + Send + 'static,
     {
         type Response = http::Response<tonic::body::BoxBody>;

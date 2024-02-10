@@ -49,7 +49,7 @@ mod h2c {
     use std::pin::Pin;
 
     use http::{Request, Response};
-    use hyper::Body;
+    use hyper::body::Incoming;
     use tower::Service;
 
     #[derive(Clone)]
@@ -59,9 +59,9 @@ mod h2c {
 
     type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
-    impl<S> Service<Request<Body>> for H2c<S>
+    impl<S> Service<Request<Incoming>> for H2c<S>
     where
-        S: Service<Request<Body>, Response = Response<tonic::transport::AxumBoxBody>>
+        S: Service<Request<Incoming>, Response = Response<tonic::transport::AxumBoxBody>>
             + Clone
             + Send
             + 'static,
@@ -69,7 +69,7 @@ mod h2c {
         S::Error: Into<BoxError> + Sync + Send + 'static,
         S::Response: Send + 'static,
     {
-        type Response = hyper::Response<Body>;
+        type Response = hyper::Response<Incoming>;
         type Error = hyper::Error;
         type Future =
             Pin<Box<dyn std::future::Future<Output = Result<Self::Response, Self::Error>> + Send>>;
@@ -81,7 +81,7 @@ mod h2c {
             std::task::Poll::Ready(Ok(()))
         }
 
-        fn call(&mut self, mut req: hyper::Request<Body>) -> Self::Future {
+        fn call(&mut self, mut req: hyper::Request<Incoming>) -> Self::Future {
             let svc = self.s.clone();
             Box::pin(async move {
                 tokio::spawn(async move {
@@ -94,7 +94,7 @@ mod h2c {
                         .unwrap();
                 });
 
-                let mut res = hyper::Response::new(hyper::Body::empty());
+                let mut res = hyper::Response::new(hyper::body::Incoming::empty());
                 *res.status_mut() = http::StatusCode::SWITCHING_PROTOCOLS;
                 res.headers_mut().insert(
                     hyper::header::UPGRADE,

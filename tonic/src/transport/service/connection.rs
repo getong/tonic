@@ -4,9 +4,9 @@ use crate::{
     transport::{BoxFuture, Endpoint},
 };
 use http::Uri;
-use hyper::client::conn::Builder;
-use hyper::client::connect::Connection as HyperConnection;
-use hyper::client::service::Connect as HyperConnect;
+use hyper_util::client::legacy::Builder;
+use hyper_util::client::legacy::connect::Connection as HyperConnection;
+use hyper_util::client::legacy::connect::Connect as HyperConnect;
 use std::{
     fmt,
     task::{Context, Poll},
@@ -22,7 +22,7 @@ use tower::{
 use tower_service::Service;
 
 pub(crate) type Request = http::Request<BoxBody>;
-pub(crate) type Response = http::Response<hyper::Body>;
+pub(crate) type Response = http::Response<hyper::body::Incoming>;
 
 pub(crate) struct Connection {
     inner: BoxService<Request, Response, crate::Error>,

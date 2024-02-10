@@ -10,13 +10,13 @@ use tower_service::Service;
 ///
 /// [`Grpc`]: ../client/struct.Grpc.html
 /// [`tower_service`]: https://docs.rs/tower-service
-pub trait GrpcService<ReqBody> {
+pub trait GrpcService<ReqIncoming> {
     /// Responses body given by the service.
-    type ResponseBody: Body;
+    type ResponseIncoming: Incoming;
     /// Errors produced by the service.
     type Error: Into<crate::Error>;
     /// The future response value.
-    type Future: Future<Output = Result<http::Response<Self::ResponseBody>, Self::Error>>;
+    type Future: Future<Output = Result<http::Response<Self::ResponseIncoming>, Self::Error>>;
 
     /// Returns `Ready` when the service is able to process requests.
     ///
@@ -26,17 +26,17 @@ pub trait GrpcService<ReqBody> {
     /// Process the request and return the response asynchronously.
     ///
     /// Reference [`Service::call`].
-    fn call(&mut self, request: http::Request<ReqBody>) -> Self::Future;
+    fn call(&mut self, request: http::Request<ReqIncoming>) -> Self::Future;
 }
 
-impl<T, ReqBody, ResBody> GrpcService<ReqBody> for T
+impl<T, ReqIncoming, ResIncoming> GrpcService<ReqIncoming> for T
 where
-    T: Service<http::Request<ReqBody>, Response = http::Response<ResBody>>,
+    T: Service<http::Request<ReqIncoming>, Response = http::Response<ResIncoming>>,
     T::Error: Into<crate::Error>,
-    ResBody: Body,
-    <ResBody as Body>::Error: Into<crate::Error>,
+    ResIncoming: Incoming,
+    <ResIncoming as Incoming>::Error: Into<crate::Error>,
 {
-    type ResponseBody = ResBody;
+    type ResponseIncoming = ResIncoming;
     type Error = T::Error;
     type Future = T::Future;
 
@@ -44,7 +44,7 @@ where
         Service::poll_ready(self, cx)
     }
 
-    fn call(&mut self, request: http::Request<ReqBody>) -> Self::Future {
+    fn call(&mut self, request: http::Request<ReqIncoming>) -> Self::Future {
         Service::call(self, request)
     }
 }

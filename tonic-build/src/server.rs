@@ -151,7 +151,7 @@ pub(crate) fn generate_internal<T: Service>(
             impl<T, B> tonic::codegen::Service<http::Request<B>> for #server_service<T>
                 where
                     T: #server_trait,
-                    B: Body + Send + 'static,
+                    B: Incoming + Send + 'static,
                     B::Error: Into<StdError> + Send + 'static,
             {
                 type Response = http::Response<tonic::body::BoxBody>;

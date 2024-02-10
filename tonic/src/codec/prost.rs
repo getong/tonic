@@ -176,7 +176,7 @@ mod tests {
 
         buf.put(&msg[..]);
 
-        let body = body::MockBody::new(&buf[..], 10005, 0);
+        let body = body::MockIncoming::new(&buf[..], 10005, 0);
 
         let mut stream = Streaming::new_request(decoder, body, None, None);
 
@@ -202,7 +202,7 @@ mod tests {
 
         buf.put(&msg[..]);
 
-        let body = body::MockBody::new(&buf[..], MAX_MESSAGE_SIZE + HEADER_SIZE + 1, 0);
+        let body = body::MockIncoming::new(&buf[..], MAX_MESSAGE_SIZE + HEADER_SIZE + 1, 0);
 
         let mut stream = Streaming::new_request(decoder, body, None, Some(MAX_MESSAGE_SIZE));
 
@@ -350,7 +350,7 @@ mod tests {
         };
 
         #[derive(Debug)]
-        pub(super) struct MockBody {
+        pub(super) struct MockIncoming {
             data: Bytes,
 
             // the size of the partial message to send
@@ -360,9 +360,9 @@ mod tests {
             count: usize,
         }
 
-        impl MockBody {
+        impl MockIncoming {
             pub(super) fn new(b: &[u8], partial_len: usize, count: usize) -> Self {
-                MockBody {
+                MockIncoming {
                     data: Bytes::copy_from_slice(b),
                     partial_len,
                     count,
@@ -370,7 +370,7 @@ mod tests {
             }
         }
 
-        impl Body for MockBody {
+        impl Incoming for MockIncoming {
             type Data = Bytes;
             type Error = Status;
 

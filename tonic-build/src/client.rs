@@ -68,8 +68,8 @@ pub(crate) fn generate_internal<T: Service>(
             where
                 T: tonic::client::GrpcService<tonic::body::BoxBody>,
                 T::Error: Into<StdError>,
-                T::ResponseBody: Body<Data = Bytes> + Send  + 'static,
-                <T::ResponseBody as Body>::Error: Into<StdError> + Send,
+                T::ResponseIncoming: Incoming<Data = Bytes> + Send  + 'static,
+                <T::ResponseIncoming as Incoming>::Error: Into<StdError> + Send,
             {
                 pub fn new(inner: T) -> Self {
                     let inner = tonic::client::Grpc::new(inner);
@@ -84,10 +84,10 @@ pub(crate) fn generate_internal<T: Service>(
                 pub fn with_interceptor<F>(inner: T, interceptor: F) -> #service_ident<InterceptedService<T, F>>
                 where
                     F: tonic::service::Interceptor,
-                    T::ResponseBody: Default,
+                    T::ResponseIncoming: Default,
                     T: tonic::codegen::Service<
                         http::Request<tonic::body::BoxBody>,
-                        Response = http::Response<<T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody>
+                        Response = http::Response<<T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseIncoming>
                     >,
                     <T as tonic::codegen::Service<http::Request<tonic::body::BoxBody>>>::Error: Into<StdError> + Send + Sync,
                 {

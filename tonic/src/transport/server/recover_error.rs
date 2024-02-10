@@ -21,12 +21,12 @@ impl<S> RecoverError<S> {
     }
 }
 
-impl<S, R, ResBody> Service<R> for RecoverError<S>
+impl<S, R, ResIncoming> Service<R> for RecoverError<S>
 where
-    S: Service<R, Response = Response<ResBody>>,
+    S: Service<R, Response = Response<ResIncoming>>,
     S::Error: Into<crate::Error>,
 {
-    type Response = Response<MaybeEmptyBody<ResBody>>;
+    type Response = Response<MaybeEmptyIncoming<ResIncoming>>;
     type Error = crate::Error;
     type Future = ResponseFuture<S::Future>;
 
@@ -47,12 +47,12 @@ pub(crate) struct ResponseFuture<F> {
     inner: F,
 }
 
-impl<F, E, ResBody> Future for ResponseFuture<F>
+impl<F, E, ResIncoming> Future for ResponseFuture<F>
 where
-    F: Future<Output = Result<Response<ResBody>, E>>,
+    F: Future<Output = Result<Response<ResIncoming>, E>>,
     E: Into<crate::Error>,
 {
-    type Output = Result<Response<MaybeEmptyBody<ResBody>>, crate::Error>;
+    type Output = Result<Response<MaybeEmptyIncoming<ResIncoming>>, crate::Error>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let result: Result<Response<_>, crate::Error> =
@@ -60,12 +60,12 @@ where
 
         match result {
             Ok(response) => {
-                let response = response.map(MaybeEmptyBody::full);
+                let response = response.map(MaybeEmptyIncoming::full);
                 Poll::Ready(Ok(response))
             }
             Err(err) => match Status::try_from_error(err) {
                 Ok(status) => {
-                    let mut res = Response::new(MaybeEmptyBody::empty());
+                    let mut res = Response::new(MaybeEmptyIncoming::empty());
                     status.add_header(res.headers_mut()).unwrap();
                     Poll::Ready(Ok(res))
                 }
@@ -76,12 +76,12 @@ where
 }
 
 #[pin_project]
-pub(crate) struct MaybeEmptyBody<B> {
+pub(crate) struct MaybeEmptyIncoming<B> {
     #[pin]
     inner: Option<B>,
 }
 
-impl<B> MaybeEmptyBody<B> {
+impl<B> MaybeEmptyIncoming<B> {
     fn full(inner: B) -> Self {
         Self { inner: Some(inner) }
     }
@@ -91,7 +91,7 @@ impl<B> MaybeEmptyBody<B> {
     }
 }
 
-impl<B> http_body::Body for MaybeEmptyBody<B>
+impl<B> http_body::Body for MaybeEmptyIncoming<B>
 where
     B: http_body::Body + Send,
 {

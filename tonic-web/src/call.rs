@@ -5,7 +5,7 @@ use std::task::{ready, Context, Poll};
 use base64::Engine as _;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use http::{header, HeaderMap, HeaderName, HeaderValue};
-use http_body::{Body, SizeHint};
+use http_body::{Incoming, SizeHint};
 use pin_project::pin_project;
 use tokio_stream::Stream;
 use tonic::Status;
@@ -56,7 +56,7 @@ pub(crate) enum Encoding {
     None,
 }
 
-/// HttpBody adapter for the grpc web based services.
+/// HttpIncoming adapter for the grpc web based services.
 #[derive(Debug)]
 #[pin_project]
 pub struct GrpcWebCall<B> {
@@ -157,7 +157,7 @@ impl<B> GrpcWebCall<B> {
 
 impl<B> GrpcWebCall<B>
 where
-    B: Body<Data = Bytes>,
+    B: Incoming<Data = Bytes>,
     B::Error: Error,
 {
     fn poll_decode(
@@ -229,9 +229,9 @@ where
     }
 }
 
-impl<B> Body for GrpcWebCall<B>
+impl<B> Incoming for GrpcWebCall<B>
 where
-    B: Body<Data = Bytes>,
+    B: Incoming<Data = Bytes>,
     B::Error: Error,
 {
     type Data = Bytes;
@@ -310,13 +310,13 @@ where
 
 impl<B> Stream for GrpcWebCall<B>
 where
-    B: Body<Data = Bytes>,
+    B: Incoming<Data = Bytes>,
     B::Error: Error,
 {
     type Item = Result<Bytes, Status>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        Body::poll_data(self, cx)
+        Incoming::poll_data(self, cx)
     }
 }
 
