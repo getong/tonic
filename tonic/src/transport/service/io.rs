@@ -147,7 +147,7 @@ where
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-        buf: &mut ReadBuf<'_>,
+        mut buf: hyper::rt::ReadBufCursor<'_>,
     ) -> Poll<io::Result<()>> {
         match &mut *self {
             Self::Io(io) => Pin::new(io).poll_read(cx, buf),

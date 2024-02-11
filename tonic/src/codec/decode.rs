@@ -240,7 +240,7 @@ impl StreamingInner {
 
     // Returns Some(()) if data was found or None if the loop in `poll_next` should break
     fn poll_data(&mut self, cx: &mut Context<'_>) -> Poll<Result<Option<()>, Status>> {
-        let chunk = match ready!(Pin::new(&mut self.body).poll_data(cx)) {
+        let chunk = match ready!(Pin::new(&mut self.body).poll_frame(cx)) {
             Some(Ok(d)) => Some(d),
             Some(Err(status)) => {
                 if self.direction == Direction::Request && status.code() == Code::Cancelled {
@@ -273,7 +273,7 @@ impl StreamingInner {
 
     fn poll_response(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Status>> {
         if let Direction::Response(status) = self.direction {
-            match ready!(Pin::new(&mut self.body).poll_trailers(cx)) {
+            match ready!(Pin::new(&mut self.body).poll_frame(cx)) {
                 Ok(trailer) => {
                     if let Err(e) = crate::status::infer_grpc_status(trailer.as_ref(), status) {
                         if let Some(e) = e {

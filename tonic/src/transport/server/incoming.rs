@@ -11,7 +11,7 @@ use std::{
     task::{Context, Poll},
     time::Duration,
 };
-use tokio::net::{TcpListener, TcpStream};
+use tokio::net::{TcpListener, TcpSocket, TcpStream};
 use tokio_stream::{Stream, StreamExt};
 
 #[cfg(not(feature = "tls"))]
@@ -125,7 +125,7 @@ enum SelectOutput<A> {
 /// of `Read + Write` that communicate with clients that connect to a socket address.
 #[derive(Debug)]
 pub struct TcpBody {
-    inner: TcpListener,
+    inner: TcpSocket,
 }
 
 impl TcpBody {
@@ -165,7 +165,7 @@ impl TcpBody {
         nodelay: bool,
         keepalive: Option<Duration>,
     ) -> Result<Self, crate::Error> {
-        let mut inner = TcpListener::bind(&addr).await?;
+        let mut inner = TcpListener::bind(&addr).await?.accept().await?.0;
         inner.set_nodelay(nodelay);
         inner.set_keepalive(keepalive);
         Ok(TcpBody { inner })
@@ -173,12 +173,12 @@ impl TcpBody {
 
     /// Creates a new `TcpIncoming` from an existing `tokio::net::TcpListener`.
     pub fn from_listener(
-        mut listener: TcpListener,
+        mut listener: TcpSocket,
         nodelay: bool,
         keepalive: Option<Duration>,
     ) -> Result<Self, crate::Error> {
         listener.set_nodelay(nodelay);
-        listener.set_keepalive(keepalive);
+        listener.set_keepalive(keepalive.is_some());
         Ok(TcpBody { inner: listener })
     }
 }

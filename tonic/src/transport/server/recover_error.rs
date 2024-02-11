@@ -1,6 +1,6 @@
 use crate::Status;
 use http::Response;
-use http_body::{Body, Frame};
+use http_body::Frame;
 use pin_project::pin_project;
 use std::{
     future::Future,

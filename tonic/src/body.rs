@@ -1,7 +1,7 @@
 //! HTTP specific body utilities.
 
 use http_body::Body;
-
+use http_body_util::BodyExt;
 /// A type erased HTTP body used for tonic services.
 pub type BoxBody = http_body_util::combinators::UnsyncBoxBody<bytes::Bytes, crate::Status>;
 

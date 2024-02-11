@@ -39,7 +39,7 @@ use crate::body::BoxBody;
 use crate::server::NamedService;
 use bytes::Bytes;
 use http::{Request, Response};
-use http_body::Body;
+use http_body_util::BodyExt;
 use hyper::body::Incoming;
 use hyper::rt::{Read, Write};
 use pin_project::pin_project;
