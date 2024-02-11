@@ -3,8 +3,8 @@ use std::{
     {fmt, sync::Arc},
 };
 
+use hyper::rt::{Read, Write};
 use rustls_pki_types::{CertificateDer, PrivateKeyDer, ServerName};
-use tokio::io::{AsyncRead, AsyncWrite};
 use tokio_rustls::{
     rustls::{server::WebPkiClientVerifier, ClientConfig, RootCertStore, ServerConfig},
     TlsAcceptor as RustlsAcceptor, TlsConnector as RustlsConnector,
@@ -72,7 +72,7 @@ impl TlsConnector {
 
     pub(crate) async fn connect<I>(&self, io: I) -> Result<BoxedIo, crate::Error>
     where
-        I: AsyncRead + AsyncWrite + Send + Unpin + 'static,
+        I: Read + Write + Send + Unpin + 'static,
     {
         let io = RustlsConnector::from(self.config.clone())
             .connect(self.domain.as_ref().to_owned(), io)
@@ -136,7 +136,7 @@ impl TlsAcceptor {
 
     pub(crate) async fn accept<IO>(&self, io: IO) -> Result<TlsStream<IO>, crate::Error>
     where
-        IO: AsyncRead + AsyncWrite + Connected + Unpin + Send + 'static,
+        IO: Read + Write + Connected + Unpin + Send + 'static,
     {
         let acceptor = RustlsAcceptor::from(self.inner.clone());
         acceptor.accept(io).await.map_err(Into::into)

@@ -1,6 +1,7 @@
 use super::*;
 use bytes::Bytes;
 use http_body::Body;
+use hyper::rt::{Read, Write};
 use pin_project::pin_project;
 use std::{
     pin::Pin,
@@ -10,7 +11,7 @@ use std::{
     },
     task::{ready, Context, Poll},
 };
-use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
+use tokio::io::ReadBuf;
 use tonic::codec::CompressionEncoding;
 use tonic::transport::{server::Connected, Channel};
 use tower_http::map_request_body::MapRequestIncomingLayer;

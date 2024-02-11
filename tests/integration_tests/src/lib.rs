@@ -10,7 +10,8 @@ pub mod mock {
         task::{Context, Poll},
     };
 
-    use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
+    use hyper::rt::{Read, Write};
+    use tokio::io::ReadBuf;
     use tonic::transport::server::Connected;
 
     #[derive(Debug)]
@@ -23,7 +24,7 @@ pub mod mock {
         fn connect_info(&self) -> Self::ConnectInfo {}
     }
 
-    impl AsyncRead for MockStream {
+    impl Read for MockStream {
         fn poll_read(
             mut self: Pin<&mut Self>,
             cx: &mut Context<'_>,
@@ -33,7 +34,7 @@ pub mod mock {
         }
     }
 
-    impl AsyncWrite for MockStream {
+    impl Write for MockStream {
         fn poll_write(
             mut self: Pin<&mut Self>,
             cx: &mut Context<'_>,

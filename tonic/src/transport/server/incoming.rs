@@ -4,16 +4,14 @@ use crate::transport::service::ServerIo;
 //     accept::Accept,
 //     conn::{AddrIncoming},
 // };
+use hyper::rt::{Read, Write};
 use std::{
     net::SocketAddr,
     pin::{pin, Pin},
     task::{Context, Poll},
     time::Duration,
 };
-use tokio::{
-    io::{AsyncRead, AsyncWrite},
-    net::{TcpListener, TcpStream},
-};
+use tokio::net::{TcpListener, TcpStream};
 use tokio_stream::{Stream, StreamExt};
 
 #[cfg(not(feature = "tls"))]
@@ -22,7 +20,7 @@ pub(crate) fn tcp_incoming<IO, IE, L>(
     _server: Server<L>,
 ) -> impl Stream<Item = Result<ServerIo<IO>, crate::Error>>
 where
-    IO: AsyncRead + AsyncWrite + Connected + Unpin + Send + 'static,
+    IO: Read + Write + Connected + Unpin + Send + 'static,
     IE: Into<crate::Error>,
 {
     async_stream::try_stream! {
@@ -40,7 +38,7 @@ pub(crate) fn tcp_incoming<IO, IE, L>(
     server: Server<L>,
 ) -> impl Stream<Item = Result<ServerIo<IO>, crate::Error>>
 where
-    IO: AsyncRead + AsyncWrite + Connected + Unpin + Send + 'static,
+    IO: Read + Write + Connected + Unpin + Send + 'static,
     IE: Into<crate::Error>,
 {
     async_stream::try_stream! {
@@ -124,7 +122,7 @@ enum SelectOutput<A> {
 /// Binds a socket address for a [Router](super::Router)
 ///
 /// An incoming stream, usable with [Router::serve_with_incoming](super::Router::serve_with_incoming),
-/// of `AsyncRead + AsyncWrite` that communicate with clients that connect to a socket address.
+/// of `Read + Write` that communicate with clients that connect to a socket address.
 #[derive(Debug)]
 pub struct TcpBody {
     inner: TcpListener,

@@ -41,6 +41,7 @@ use bytes::Bytes;
 use http::{Request, Response};
 use http_body::Body;
 use hyper::body::Incoming;
+use hyper::rt::{Read, Write};
 use pin_project::pin_project;
 use std::{
     convert::Infallible,
@@ -53,7 +54,6 @@ use std::{
     task::{ready, Context, Poll},
     time::Duration,
 };
-use tokio::io::{AsyncRead, AsyncWrite};
 use tokio_stream::Stream;
 use tower::{
     layer::util::{Identity, Stack},
@@ -499,7 +499,7 @@ impl<L> Server<L> {
         <<L as Layer<S>>::Service as Service<Request<Incoming>>>::Future: Send + 'static,
         <<L as Layer<S>>::Service as Service<Request<Incoming>>>::Error: Into<crate::Error> + Send,
         I: Stream<Item = Result<IO, IE>>,
-        IO: AsyncRead + AsyncWrite + Connected + Unpin + Send + 'static,
+        IO: Read + Write + Connected + Unpin + Send + 'static,
         IO::ConnectInfo: Clone + Send + Sync + 'static,
         IE: Into<crate::Error>,
         F: Future<Output = ()>,
@@ -663,7 +663,7 @@ impl<L> Router<L> {
     }
 
     /// Consume this [`Server`] creating a future that will execute the server
-    /// on the provided incoming stream of `AsyncRead + AsyncWrite`.
+    /// on the provided incoming stream of `Read + Write`.
     ///
     /// This method discards any provided [`Server`] TCP configuration.
     ///
@@ -674,7 +674,7 @@ impl<L> Router<L> {
     ) -> Result<(), super::Error>
     where
         I: Stream<Item = Result<IO, IE>>,
-        IO: AsyncRead + AsyncWrite + Connected + Unpin + Send + 'static,
+        IO: Read + Write + Connected + Unpin + Send + 'static,
         IO::ConnectInfo: Clone + Send + Sync + 'static,
         IE: Into<crate::Error>,
         L: Layer<Routes>,
@@ -696,7 +696,7 @@ impl<L> Router<L> {
     }
 
     /// Consume this [`Server`] creating a future that will execute the server
-    /// on the provided incoming stream of `AsyncRead + AsyncWrite`. Similar to
+    /// on the provided incoming stream of `Read + Write`. Similar to
     /// `serve_with_shutdown` this method will also take a signal future to
     /// gracefully shutdown the server.
     ///
@@ -710,7 +710,7 @@ impl<L> Router<L> {
     ) -> Result<(), super::Error>
     where
         I: Stream<Item = Result<IO, IE>>,
-        IO: AsyncRead + AsyncWrite + Connected + Unpin + Send + 'static,
+        IO: Read + Write + Connected + Unpin + Send + 'static,
         IO::ConnectInfo: Clone + Send + Sync + 'static,
         IE: Into<crate::Error>,
         F: Future<Output = ()>,

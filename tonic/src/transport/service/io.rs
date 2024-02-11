@@ -1,19 +1,17 @@
 use crate::transport::server::Connected;
+use hyper::rt::{Read, Write};
 use hyper_util::client::legacy::connect::{Connected as HyperConnected, Connection};
 use std::io;
 use std::io::IoSlice;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
+use tokio::io::ReadBuf;
 #[cfg(feature = "tls")]
 use tokio_rustls::server::TlsStream;
 
-pub(in crate::transport) trait Io:
-    AsyncRead + AsyncWrite + Send + 'static
-{
-}
+pub(in crate::transport) trait Io: Read + Write + Send + 'static {}
 
-impl<T> Io for T where T: AsyncRead + AsyncWrite + Send + 'static {}
+impl<T> Io for T where T: Read + Write + Send + 'static {}
 
 pub(crate) struct BoxedIo(Pin<Box<dyn Io>>);
 
@@ -40,23 +38,37 @@ impl Connected for BoxedIo {
 #[derive(Copy, Clone)]
 pub(crate) struct NoneConnectInfo;
 
-impl AsyncRead for BoxedIo {
+impl Read for BoxedIo {
     fn poll_read(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut ReadBuf<'_>,
+        self: Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+        mut buf: hyper::rt::ReadBufCursor<'_>,
     ) -> Poll<io::Result<()>> {
-        Pin::new(&mut self.0).poll_read(cx, buf)
+        let boxed_io = Pin::get_mut(self);
+        unsafe {
+            let mut tbuf = ReadBuf::uninit(buf.as_mut());
+
+            let result = Pin::new(&mut boxed_io.0).poll_read(cx, &mut tbuf);
+            match result {
+                std::task::Poll::Ready(Ok(())) => {
+                    let n = tbuf.filled().len();
+                    buf.advance(n);
+                    std::task::Poll::Ready(Ok(()))
+                }
+                other => other,
+            }
+        }
     }
 }
 
-impl AsyncWrite for BoxedIo {
+impl Write for BoxedIo {
     fn poll_write(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
+        self: Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
-        Pin::new(&mut self.0).poll_write(cx, buf)
+        let boxed_io = Pin::get_mut(self);
+        Pin::new(&mut boxed_io.0).poll_write(cx, buf)
     }
 
     fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
@@ -128,9 +140,9 @@ impl<IO> ServerIo<IO> {
     }
 }
 
-impl<IO> AsyncRead for ServerIo<IO>
+impl<IO> Read for ServerIo<IO>
 where
-    IO: AsyncWrite + AsyncRead + Unpin,
+    IO: Write + Read + Unpin,
 {
     fn poll_read(
         mut self: Pin<&mut Self>,
@@ -145,9 +157,9 @@ where
     }
 }
 
-impl<IO> AsyncWrite for ServerIo<IO>
+impl<IO> Write for ServerIo<IO>
 where
-    IO: AsyncWrite + AsyncRead + Unpin,
+    IO: Write + Read + Unpin,
 {
     fn poll_write(
         mut self: Pin<&mut Self>,

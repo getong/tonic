@@ -341,10 +341,11 @@ impl Endpoint {
         let connector = self.connector(http);
 
         if let Some(connect_timeout) = self.connect_timeout {
-            let mut connector = hyper_timeout::TimeoutConnector::new(connector);
+            let mut connector = hyper_timeout::TimeoutConnector::new(http);
             connector.set_connect_timeout(Some(connect_timeout));
             Channel::connect(connector, self.clone()).await
         } else {
+            let connector = self.connector(http);
             Channel::connect(connector, self.clone()).await
         }
     }
