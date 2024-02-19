@@ -50,10 +50,10 @@ impl<C> Connector<C> {
 
 impl<C> Service<Uri> for Connector<C>
 where
-    C: MakeConnection<Uri>,
-    C::Connection: Unpin + Send + 'static,
-    C::Future: Send + 'static,
-    crate::Error: From<C::Error> + Send + 'static,
+    // C: MakeConnection<Uri>,
+    // C::Connection: Unpin + Send + 'static,
+    // C::Future: Send + 'static,
+    // crate::Error: From<C::Error> + Send + 'static,
 {
     type Response = BoxedIo;
     type Error = crate::Error;
