@@ -60,7 +60,7 @@ where
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        MakeConnection::poll_ready(&mut self.inner, cx).map_err(Into::into)
+        self.inner.poll_ready(cx).map_err(Into::into)
     }
 
     fn call(&mut self, uri: Uri) -> Self::Future {
