@@ -1,5 +1,6 @@
 use crate::transport::server::Connected;
 use hyper::rt::{Read, Write};
+use tokio::io::{AsyncRead, AsyncWrite};
 use hyper_util::client::legacy::connect::{Connected as HyperConnected, Connection};
 use std::io;
 use std::io::IoSlice;
@@ -9,9 +10,9 @@ use tokio::io::ReadBuf;
 #[cfg(feature = "tls")]
 use tokio_rustls::server::TlsStream;
 
-pub(in crate::transport) trait Io: Read + Write + Send + 'static {}
+pub(in crate::transport) trait Io: AsyncRead + AsyncWrite + Send + 'static {}
 
-impl<T> Io for T where T: Read + Write + Send + 'static {}
+impl<T> Io for T where T: AsyncRead + AsyncWrite + Send + 'static {}
 
 pub(crate) struct BoxedIo(Pin<Box<dyn Io>>);
 

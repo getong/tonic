@@ -50,10 +50,10 @@ impl<C> Connector<C> {
 
 impl<C> Service<Uri> for Connector<C>
 where
-    // C: MakeConnection<Uri>,
+    C: Service<Uri>,
     // C::Connection: Unpin + Send + 'static,
-    // C::Future: Send + 'static,
-    // crate::Error: From<C::Error> + Send + 'static,
+    C::Future: Send + 'static,
+    crate::Error: From<C::Error> + Send + 'static,
 {
     type Response = BoxedIo;
     type Error = crate::Error;
@@ -72,7 +72,7 @@ where
 
         #[cfg(feature = "tls")]
         let is_https = uri.scheme_str() == Some("https");
-        let connect = self.inner.make_connection(uri);
+        let connect = self.inner.call(uri);
 
         Box::pin(async move {
             let io = connect.await?;
