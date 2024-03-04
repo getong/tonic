@@ -33,6 +33,7 @@ pub(crate) use tokio_rustls::server::TlsStream;
 #[cfg(feature = "tls")]
 use crate::transport::Error;
 
+use hyper_util::rt::TokioExecutor;
 use self::recover_error::RecoverError;
 use super::service::{GrpcTimeout, ServerIo};
 use crate::body::BoxBody;
@@ -525,7 +526,7 @@ impl<L> Server<L> {
         let svc = self.service_builder.service(svc);
 
         let tcp = incoming::tcp_incoming(incoming, self);
-        let incoming = accept::from_stream::<_, _, crate::Error>(tcp);
+        // let incoming = accept::from_stream::<_, _, crate::Error>(tcp);
 
         let svc = MakeSvc {
             inner: svc,
@@ -535,7 +536,7 @@ impl<L> Server<L> {
             _io: PhantomData,
         };
 
-        let server = hyper_util::client::legacy::Client::builder(incoming)
+      let server = hyper_util::client::legacy::Client::builder(TokioExecutor::new())
             .http2_only(http2_only)
             .http2_initial_connection_window_size(init_connection_window_size)
             .http2_initial_stream_window_size(init_stream_window_size)
