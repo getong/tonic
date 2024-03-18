@@ -33,7 +33,6 @@ pub(crate) use tokio_rustls::server::TlsStream;
 #[cfg(feature = "tls")]
 use crate::transport::Error;
 
-use hyper_util::rt::TokioExecutor;
 use self::recover_error::RecoverError;
 use super::service::{GrpcTimeout, ServerIo};
 use crate::body::BoxBody;
@@ -43,6 +42,7 @@ use http::{Request, Response};
 use http_body_util::BodyExt;
 use hyper::body::Incoming;
 use hyper::rt::{Read, Write};
+use hyper_util::rt::TokioExecutor;
 use pin_project::pin_project;
 use std::{
     convert::Infallible,
@@ -536,21 +536,21 @@ impl<L> Server<L> {
             _io: PhantomData,
         };
 
-      let server = hyper_util::client::legacy::Client::builder(TokioExecutor::new())
+        let server = hyper_util::server::conn::auto::Builder::new(TokioExecutor::new())
             .http2_only(http2_only)
             .http2_initial_connection_window_size(init_connection_window_size)
             .http2_initial_stream_window_size(init_stream_window_size)
-            .http2_max_concurrent_streams(max_concurrent_streams)
+            // .http2_max_concurrent_streams(max_concurrent_streams)
             .http2_keep_alive_interval(http2_keepalive_interval)
             .http2_keep_alive_timeout(http2_keepalive_timeout)
             .http2_adaptive_window(http2_adaptive_window.unwrap_or_default())
-            .http2_max_pending_accept_reset_streams(http2_max_pending_accept_reset_streams)
+            // .http2_max_pending_accept_reset_streams(http2_max_pending_accept_reset_streams)
             .http2_max_frame_size(max_frame_size);
 
         if let Some(signal) = signal {
             server
-                .serve(svc)
-                .with_graceful_shutdown(signal)
+                .serve_connection(svc)
+                .graceful_shutdown()
                 .await
                 .map_err(super::Error::from_source)?
         } else {
