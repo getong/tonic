@@ -43,6 +43,7 @@ use http_body_util::BodyExt;
 use hyper::body::Incoming;
 use hyper::rt::{Read, Write};
 use hyper_util::rt::TokioExecutor;
+use hyper_util::rt::TokioIo;
 use pin_project::pin_project;
 use std::{
     convert::Infallible,
@@ -56,6 +57,7 @@ use std::{
     time::Duration,
 };
 use tokio_stream::Stream;
+use tokio_stream::StreamExt;
 use tower::{
     layer::util::{Identity, Stack},
     layer::Layer,
@@ -527,34 +529,39 @@ impl<L> Server<L> {
 
         let tcp = incoming::tcp_incoming(incoming, self);
         // let incoming = accept::from_stream::<_, _, crate::Error>(tcp);
+        while let Some(Ok(incoming)) = tcp.next().await {
+            let io = TokioIo::new(incoming);
+            let svc = MakeSvc {
+                inner: svc,
+                concurrency_limit,
+                timeout,
+                trace_interceptor,
+                _io: PhantomData,
+            };
 
-        let svc = MakeSvc {
-            inner: svc,
-            concurrency_limit,
-            timeout,
-            trace_interceptor,
-            _io: PhantomData,
-        };
+            let server = hyper_util::server::conn::auto::Builder::new(TokioExecutor::new())
+                .http2_only(http2_only)
+                .http2_initial_connection_window_size(init_connection_window_size)
+                .http2_initial_stream_window_size(init_stream_window_size)
+                // .http2_max_concurrent_streams(max_concurrent_streams)
+                .http2_keep_alive_interval(http2_keepalive_interval)
+                .http2_keep_alive_timeout(http2_keepalive_timeout)
+                .http2_adaptive_window(http2_adaptive_window.unwrap_or_default())
+                // .http2_max_pending_accept_reset_streams(http2_max_pending_accept_reset_streams)
+                .http2_max_frame_size(max_frame_size);
 
-        let server = hyper_util::server::conn::auto::Builder::new(TokioExecutor::new())
-            .http2_only(http2_only)
-            .http2_initial_connection_window_size(init_connection_window_size)
-            .http2_initial_stream_window_size(init_stream_window_size)
-            // .http2_max_concurrent_streams(max_concurrent_streams)
-            .http2_keep_alive_interval(http2_keepalive_interval)
-            .http2_keep_alive_timeout(http2_keepalive_timeout)
-            .http2_adaptive_window(http2_adaptive_window.unwrap_or_default())
-            // .http2_max_pending_accept_reset_streams(http2_max_pending_accept_reset_streams)
-            .http2_max_frame_size(max_frame_size);
-
-        if let Some(signal) = signal {
-            server
-                .serve_connection(svc)
-                .graceful_shutdown()
-                .await
-                .map_err(super::Error::from_source)?
-        } else {
-            server.serve(svc).await.map_err(super::Error::from_source)?;
+            if let Some(signal) = signal {
+                server
+                    .serve_connection(io, svc)
+                    .graceful_shutdown()
+                    .await
+                    .map_err(super::Error::from_source)?
+            } else {
+                server
+                    .serve(io, svc)
+                    .await
+                    .map_err(super::Error::from_source)?;
+            }
         }
 
         Ok(())
