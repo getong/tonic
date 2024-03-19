@@ -528,7 +528,8 @@ impl<L> Server<L> {
         let svc = self.service_builder.service(svc);
 
         let tcp = incoming::tcp_incoming(incoming, self);
-        // let incoming = accept::from_stream::<_, _, crate::Error>(tcp);
+      // let incoming = accept::from_stream::<_, _, crate::Error>(tcp);
+      let mut tcp = std::pin::pin!(tcp);
         while let Some(Ok(incoming)) = tcp.next().await {
             let io = TokioIo::new(incoming);
             let svc = MakeSvc {
@@ -539,16 +540,16 @@ impl<L> Server<L> {
                 _io: PhantomData,
             };
 
-            let server = hyper_util::server::conn::auto::Builder::new(TokioExecutor::new())
-                .http2_only(http2_only)
-                .http2_initial_connection_window_size(init_connection_window_size)
-                .http2_initial_stream_window_size(init_stream_window_size)
-                // .http2_max_concurrent_streams(max_concurrent_streams)
-                .http2_keep_alive_interval(http2_keepalive_interval)
-                .http2_keep_alive_timeout(http2_keepalive_timeout)
-                .http2_adaptive_window(http2_adaptive_window.unwrap_or_default())
-                // .http2_max_pending_accept_reset_streams(http2_max_pending_accept_reset_streams)
-                .http2_max_frame_size(max_frame_size);
+            let server = hyper_util::server::conn::auto::Builder::new(TokioExecutor::new());
+                // .http2_only(http2_only)
+                // .http2_initial_connection_window_size(init_connection_window_size)
+                // .http2_initial_stream_window_size(init_stream_window_size)
+                // // .http2_max_concurrent_streams(max_concurrent_streams)
+                // .http2_keep_alive_interval(http2_keepalive_interval)
+                // .http2_keep_alive_timeout(http2_keepalive_timeout)
+                // .http2_adaptive_window(http2_adaptive_window.unwrap_or_default())
+                // // .http2_max_pending_accept_reset_streams(http2_max_pending_accept_reset_streams)
+                // .http2_max_frame_size(max_frame_size);
 
             if let Some(signal) = signal {
                 server
@@ -632,7 +633,7 @@ impl<L> Router<L> {
         ResBody::Error: Into<crate::Error>,
     {
         let incoming = TcpBody::new(addr, self.server.tcp_nodelay, self.server.tcp_keepalive)
-            .map_err(super::Error::from_source)?;
+            .await.map_err(super::Error::from_source)?;
         self.server
             .serve_with_shutdown::<_, _, future::Ready<()>, _, _, ResBody>(
                 self.routes.prepare(),
