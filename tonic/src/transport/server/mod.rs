@@ -42,6 +42,7 @@ use http::{Request, Response};
 use http_body_util::BodyExt;
 use hyper::body::Incoming;
 use hyper::rt::{Read, Write};
+use tokio::io::{AsyncRead, AsyncWrite};
 use hyper_util::rt::TokioExecutor;
 use hyper_util::rt::TokioIo;
 use pin_project::pin_project;
@@ -502,7 +503,7 @@ impl<L> Server<L> {
         <<L as Layer<S>>::Service as Service<Request<Incoming>>>::Future: Send + 'static,
         <<L as Layer<S>>::Service as Service<Request<Incoming>>>::Error: Into<crate::Error> + Send,
         I: Stream<Item = Result<IO, IE>>,
-        IO: Read + Write + Connected + Unpin + Send + 'static,
+        IO: AsyncRead + AsyncWrite + Connected + Unpin + Send + 'static,
         IO::ConnectInfo: Clone + Send + Sync + 'static,
         IE: Into<crate::Error>,
         F: Future<Output = ()>,

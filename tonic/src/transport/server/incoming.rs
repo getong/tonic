@@ -11,6 +11,7 @@ use std::{
     task::{Context, Poll},
     time::Duration,
 };
+use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::net::{TcpListener, TcpSocket, TcpStream};
 use tokio_stream::{Stream, StreamExt};
 
@@ -20,7 +21,7 @@ pub(crate) fn tcp_incoming<IO, IE, L>(
     _server: Server<L>,
 ) -> impl Stream<Item = Result<ServerIo<IO>, crate::Error>>
 where
-    IO: Read + Write + Connected + Unpin + Send + 'static,
+    IO: AsyncRead + AsyncWrite + Connected + Unpin + Send + 'static,
     IE: Into<crate::Error>,
 {
     async_stream::try_stream! {
@@ -38,7 +39,7 @@ pub(crate) fn tcp_incoming<IO, IE, L>(
     server: Server<L>,
 ) -> impl Stream<Item = Result<ServerIo<IO>, crate::Error>>
 where
-    IO: Read + Write + Connected + Unpin + Send + 'static,
+    IO: AsyncRead + AsyncWrite + Connected + Unpin + Send + 'static,
     IE: Into<crate::Error>,
 {
     async_stream::try_stream! {
