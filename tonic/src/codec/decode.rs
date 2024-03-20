@@ -274,7 +274,7 @@ impl StreamingInner {
     fn poll_response(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Status>> {
         if let Direction::Response(status) = self.direction {
             match ready!(Pin::new(&mut self.body).poll_frame(cx)) {
-                Ok(trailer) => {
+                Some(Ok(trailer)) => {
                     if let Err(e) = crate::status::infer_grpc_status(trailer.as_ref(), status) {
                         if let Some(e) = e {
                             return Poll::Ready(Err(e));
