@@ -2,17 +2,18 @@ use super::{Connected, Server};
 use crate::transport::service::ServerIo;
 // use hyper::server::{
 //     accept::Accept,
-//     conn::{AddrIncoming},
+//     conn::{AddrIncoming, AddrStream},
 // };
-use hyper::rt::{Read, Write};
 use std::{
     net::SocketAddr,
     pin::{pin, Pin},
     task::{Context, Poll},
     time::Duration,
 };
-use tokio::io::{AsyncRead, AsyncWrite};
-use tokio::net::{TcpListener, TcpSocket, TcpStream};
+use tokio::{
+    io::{AsyncRead, AsyncWrite},
+    net::TcpListener,
+};
 use tokio_stream::{Stream, StreamExt};
 
 #[cfg(not(feature = "tls"))]
@@ -123,13 +124,13 @@ enum SelectOutput<A> {
 /// Binds a socket address for a [Router](super::Router)
 ///
 /// An incoming stream, usable with [Router::serve_with_incoming](super::Router::serve_with_incoming),
-/// of `Read + Write` that communicate with clients that connect to a socket address.
+/// of `AsyncRead + AsyncWrite` that communicate with clients that connect to a socket address.
 #[derive(Debug)]
-pub struct TcpBody {
-    inner: TcpSocket,
+pub struct TcpIncoming {
+  inner: TcpListener,
 }
 
-impl TcpBody {
+impl TcpIncoming {
     /// Creates an instance by binding (opening) the specified socket address
     /// to which the specified TCP 'nodelay' and 'keepalive' parameters are applied.
     /// Returns a TcpIncoming if the socket address was successfully bound.
@@ -138,13 +139,13 @@ impl TcpBody {
     /// ```no_run
     /// # use tower_service::Service;
     /// # use http::{request::Request, response::Response};
-    /// # use tonic::{body::BoxBody, server::NamedService, transport::{Incoming, Server, server::TcpIncoming}};
+    /// # use tonic::{body::BoxBody, server::NamedService, transport::{Body, Server, server::TcpIncoming}};
     /// # use core::convert::Infallible;
     /// # use std::error::Error;
     /// # fn main() { }  // Cannot have type parameters, hence instead define:
     /// # fn run<S>(some_service: S) -> Result<(), Box<dyn Error + Send + Sync>>
     /// # where
-    /// #   S: Service<Request<Incoming>, Response = Response<BoxBody>, Error = Infallible> + NamedService + Clone + Send + 'static,
+    /// #   S: Service<Request<Body>, Response = Response<BoxBody>, Error = Infallible> + NamedService + Clone + Send + 'static,
     /// #   S::Future: Send + 'static,
     /// # {
     /// // Find a free port
@@ -161,36 +162,35 @@ impl TcpBody {
     ///    .serve_with_incoming(tinc);
     /// # Ok(())
     /// # }
-    pub async fn new(
+    pub fn new(
         addr: SocketAddr,
         nodelay: bool,
         keepalive: Option<Duration>,
     ) -> Result<Self, crate::Error> {
-        let mut inner = TcpListener::bind(&addr).await?.accept().await?.0;
+      let mut inner = TcpListener::bind(&addr)?;
         inner.set_nodelay(nodelay);
         inner.set_keepalive(keepalive);
-        Ok(TcpBody { inner })
+        Ok(TcpIncoming { inner })
     }
 
     /// Creates a new `TcpIncoming` from an existing `tokio::net::TcpListener`.
     pub fn from_listener(
-        mut listener: TcpSocket,
+        listener: TcpListener,
         nodelay: bool,
         keepalive: Option<Duration>,
     ) -> Result<Self, crate::Error> {
-        listener.set_nodelay(nodelay);
-        listener.set_keepalive(keepalive.is_some());
-        Ok(TcpBody { inner: listener })
+        let mut inner = listener;
+        inner.set_nodelay(nodelay);
+        inner.set_keepalive(keepalive);
+        Ok(TcpIncoming { inner })
     }
 }
 
-impl Stream for TcpBody {
-    type Item = Result<TcpStream, std::io::Error>;
+impl Stream for TcpIncoming {
+    type Item = Result<AddrStream, std::io::Error>;
 
     fn poll_next(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        loop {
-            return Pin::new(&mut self.inner).accept();
-        }
+        Pin::new(&mut self.inner).accept()
     }
 }
 
