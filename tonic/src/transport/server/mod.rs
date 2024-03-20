@@ -25,7 +25,7 @@ use super::service::TlsAcceptor;
 #[cfg(unix)]
 pub use unix::UdsConnectInfo;
 
-pub use incoming::TcpBody;
+pub use incoming::TcpIncoming;
 
 #[cfg(feature = "tls")]
 pub(crate) use tokio_rustls::server::TlsStream;
@@ -633,7 +633,7 @@ impl<L> Router<L> {
         ResBody: http_body::Body<Data = Bytes> + Send + 'static,
         ResBody::Error: Into<crate::Error>,
     {
-        let incoming = TcpBody::new(addr, self.server.tcp_nodelay, self.server.tcp_keepalive)
+        let incoming = TcpIncoming::new(addr, self.server.tcp_nodelay, self.server.tcp_keepalive)
             .await
             .map_err(super::Error::from_source)?;
         self.server
@@ -666,7 +666,7 @@ impl<L> Router<L> {
         ResBody: http_body::Body<Data = Bytes> + Send + 'static,
         ResBody::Error: Into<crate::Error>,
     {
-        let incoming = TcpBody::new(addr, self.server.tcp_nodelay, self.server.tcp_keepalive)
+        let incoming = TcpIncoming::new(addr, self.server.tcp_nodelay, self.server.tcp_keepalive)
             .map_err(super::Error::from_source)?;
         self.server
             .serve_with_shutdown(self.routes.prepare(), incoming, Some(signal))
