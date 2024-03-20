@@ -5,8 +5,7 @@ use std::io;
 use std::io::IoSlice;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use tokio::io::ReadBuf;
-use tokio::io::{AsyncRead, AsyncWrite};
+use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 #[cfg(feature = "tls")]
 use tokio_rustls::server::TlsStream;
 
@@ -164,6 +163,59 @@ where
 impl<IO> Write for ServerIo<IO>
 where
     IO: Write + Read + Unpin,
+{
+    fn poll_write(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<io::Result<usize>> {
+        match &mut *self {
+            Self::Io(io) => Pin::new(io).poll_write(cx, buf),
+            #[cfg(feature = "tls")]
+            Self::TlsIo(io) => Pin::new(io).poll_write(cx, buf),
+        }
+    }
+
+    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        match &mut *self {
+            Self::Io(io) => Pin::new(io).poll_flush(cx),
+            #[cfg(feature = "tls")]
+            Self::TlsIo(io) => Pin::new(io).poll_flush(cx),
+        }
+    }
+
+    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        match &mut *self {
+            Self::Io(io) => Pin::new(io).poll_shutdown(cx),
+            #[cfg(feature = "tls")]
+            Self::TlsIo(io) => Pin::new(io).poll_shutdown(cx),
+        }
+    }
+
+    fn poll_write_vectored(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        bufs: &[IoSlice<'_>],
+    ) -> Poll<Result<usize, io::Error>> {
+        match &mut *self {
+            Self::Io(io) => Pin::new(io).poll_write_vectored(cx, bufs),
+            #[cfg(feature = "tls")]
+            Self::TlsIo(io) => Pin::new(io).poll_write_vectored(cx, bufs),
+        }
+    }
+
+    fn is_write_vectored(&self) -> bool {
+        match self {
+            Self::Io(io) => io.is_write_vectored(),
+            #[cfg(feature = "tls")]
+            Self::TlsIo(io) => io.is_write_vectored(),
+        }
+    }
+}
+
+impl<IO> AsyncWrite for ServerIo<IO>
+where
+    IO: AsyncWrite + AsyncRead + Unpin,
 {
     fn poll_write(
         mut self: Pin<&mut Self>,
